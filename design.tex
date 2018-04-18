@@ -4,6 +4,8 @@
 \chapter{Design}
 \label{ch:Design}
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %% Naive Implementation
@@ -23,7 +25,7 @@ In this section we propose an implementation of a cache that combines inter-line
 \begin{figure}
     \includegraphics[width=\textwidth]{BDIvsDedupvsDedupBDI_Tag.pdf}
     \label{fig:DedupBDI_Tag}
-    \caption[DedupBDI Tag Array]{The figure shows three tag lines from the BDI, Dedup, and DedupBDI Caches. In a BDI cache, tags and data sets are coupled, so each tag needs to know how big is the comressed data associated with it, each tag has an extra metadata field that encodes the compression and its size. A Dedup cache allows multiple tags to have the same data line, those tags must be arranged in a linked list so each tag has a previous and a next pointer, all tags have a data pointer to point to their respective data line. In DedupBDI a tag entry must be able to allow deduplication as long as deal with compressed data lines, thus it has the same metadata as a tag entry of a BDI and Dedup cache. The data pointer in DedupBDI must be wider to allow a granularity of data segments not just data lines.}
+    \caption[DedupBDI Tag Array]{The figure shows three tag lines from the BDI, Dedup, and DedupBDI Caches. In a BDI cache, tags and data sets are coupled, so each tag needs to know how big is the comressed data associated with it and where it begins, each tag has an extra metadata field that encodes the compression and its size. A Dedup cache allows multiple tags to have the same data line, those tags must be arranged in a linked list so each tag has a previous and a next pointer, all tags have a data pointer to point to their respective data line. In DedupBDI a tag entry must be able to allow deduplication as long as deal with compressed data lines, thus it has the same metadata as a tag entry of a BDI and Dedup cache. The data pointer in DedupBDI must be wider to allow a granularity of data segments not just data lines.}
 \end{figure}
 \begin{figure}
     \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{DedupBDI.pdf}}
@@ -52,14 +54,20 @@ The hash array is a simple set associative structure, it's used to store hashes 
 \subsection{Operations}
 \label{ssec:DedupBDIOperations}
 \begin{figure}
-    \includegraphics[width=\textwidth]{DedupBDI_Read.pdf}
-    \label{fig:DeduoBDI_Read}
-    \caption[DedupBDI Read]{The flowchart shows the sequence of actions triggered by a read access to the DedupBDI cache. Red blocks signify actions happening on the critical path, while green blocks mean actions happening off the critical path. The blue shaded blocks are actions happening off the critical path but only exist in the straightforward implementation and not the final one. Each + sign in any of the blocks signifies an extra latency for tag array access, data array access, or compression}
+    \includegraphics[width=\textwidth,height=\textheight]{DedupBDI_Read.pdf}
+    \label{fig:DedupBDI_Read}
+    \caption[DedupBDI Read]{Read access flowchart.}
 \end{figure}
 \begin{figure}
-    \includegraphics[width=\textwidth]{DedupBDI_Write.pdf}
-    \label{fig:DeduoBDI_Write}
-    \caption[DedupBDI Write]{The flowchart shows the sequence of actions triggered by a write access to the DedupBDI cache. All the blocks are shaded in green because any write request should be off the critical path of the processor regardless of it's status in the cache (hit or miss). The blue shaded blocks are actions happening off the critical path but only exist in the straightforward implementation and not the final one. Each + sign in any of the blocks signifies an extra latency for tag array access, data array access, or compression}
+    \contcaption{The flowchart shows the sequence of actions triggered by a read access to the DedupBDI cache. Red blocks signify actions happening on the critical path, while green blocks mean actions happening off the critical path. The blue shaded blocks are actions happening off the critical path but only exist in the straightforward implementation and not the final one. Each + sign in any of the blocks signifies an extra latency for tag array access, data array access, or compression}
+\end{figure}
+\begin{figure}
+    \includegraphics[width=\textwidth,height=\textheight]{DedupBDI_Write.pdf}
+    \label{fig:DedupBDI_Write}
+    \caption[DedupBDI Write]{Write access flowchart.}
+\end{figure}
+\begin{figure}
+    \contcaption{The flowchart shows the sequence of actions triggered by a write access to the DedupBDI cache. All the blocks are shaded in green because any write request should be off the critical path of the processor regardless of it's status in the cache (hit or miss). The blue shaded blocks are actions happening off the critical path but only exist in the straightforward implementation and not the final one. Each + sign in any of the blocks signifies an extra latency for tag array access, data array access, or compression}
 \end{figure}
 
 \subsubsection{Tag Miss}
@@ -86,6 +94,8 @@ The data array uses a somewhat similar replacement policy to \hyperref[sssec:Ded
 \label{sssec:DedupBDIHash}
 The hash array is indexed by a part of the hash, the selection of a victim hash set is thus dependant on the hash that needs to be inserted, once that set is selected, a hash entry is then selected based on the number of deduplication on the data line it point to, if this data line is not deduplicated then this hash can be used and overwritten, otherwise it's not touched. The rationale behind this is to keep hashes pointing to deduplciated lines from getting evicted and causing the cache to miss extra deduplication for a newly incoming line that might not be useful for deduplication.
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %% Upper Bound
@@ -98,12 +108,15 @@ The hash array is indexed by a part of the hash, the selection of a victim hash 
 \label{sec:Upper Bound}
 To be able to evaluate the straightforward design we discussed in the previous section, an upper bound must be established, we try to get the upper bound of enhancements by idealizing the design choices we have selected. There are two aspects we can idealize in this design:
 \begin{itemize}
+    %TODO: Dump data lines, show missed dedup and quantify.
     \item \textbf{Finding a similar line:} Finding a similar line in the DedupBDI cache has two sources of possible error: The first is the hashing itself, because hashing data lines to a smaller space means it will never be perfect and collisions are inevitable. The second limitation is the size of hash array, because the number of entries in the hash array is less than that of the data array, there's a chance that an opportunity for deduplication is missed because the hash array was too small and couldn't keep its hash. Finding a similar line can be idealized by directly searching through the data array and comparing each line until a similar data line is found.
     %TODO: Show figure of data utilization here.
     %TODO: Show L2 Back Invs and use NMRU as ideal instead of LRU?
     \item \textbf{Replacement of data lines:} Imperfections in the replacement policy of data array comes from two sources: the first is the free list, since we cannot make the free list keep track of all free segments in the data array because it would be impractically large, it can only keep track of free sets, that means even if only one segment is used from a set that set is not kept in the free list anymore. The second source is the random selection of data lines whenever the free list is empty, our experiments show that the random selection causes utilization of the data array to be less than a 100\% as shown in \ref{ch:Results}, selecting 4 random sets might now always yield a set with enough free segments, selecting more than 4 can be time inefficient. We idealize the replacement policy by directly searching the whole data cache for free segments that are enough to insert a new compressed line, this ensures a 100\% utilization of the data array, if no free segments are available we use data array wide LRU to pick a victim segment(s) instead of doing it randomly.
 \end{itemize}
 with the use of perfect deduplication and data insertion, a hash array is no longer needed, and the tag array is no different than a normal cache. The \ref{ch:Results} chapter shows the performance of both the straightforward implementation and the idealized one.
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%

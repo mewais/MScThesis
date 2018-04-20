@@ -2,7 +2,8 @@
        PRODUCT1 = $(NAME1).pdf
      TEXSOURCE1 = $(NAME1).tex \
 		    abstract.tex ack.tex glossary.tex intro.tex laysummary.tex \
-		    ubcdiss.cls
+			background.tex motiv.tex design.tex relatedwork.tex \
+		    appendix.tex ubcdiss.cls
            BBL1 = $(NAME1).bbl
 
 #         NAME2 =

@@ -4,6 +4,12 @@
 \chapter{Background}
 \label{ch:Background}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% BDI Cache
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{BDI}
 \label{sec:BDI}
 The BDI cache introduced in \cite{bdi} is a cache that takes advantage of similarities within data lines to compress those lines into smaller sizes. In the following section we discuss the BDI cache, it's compression, structure, and operation.
@@ -69,13 +75,14 @@ A compression unit treats the line as elements of its corresponding base size. I
 \label{ssec:BDIStructure}
 \begin{figure}
     \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{BDI.pdf}}
-    \caption[BDI Cache]{Conventional vs BDI, showing one set of each. Tags doubled, Data size same but divided to segments.}
+    \caption[BDI Cache]{Conventional (up) vs BDI (down), showing one set of each. Tags doubled, Data size same but divided to segments.}
     \label{fig:BDI}
 \end{figure}
 The BDI cache builds upon the conventional cache design by adding some modifications to allow compression. Tag and data arrays are arranged in sets, and tag sets and data sets are coupled. The BDI cache structure is shown in Figure \ref{fig:BDI}
 \subsubsection{Tag Array}
 \label{sssec:BDITag}
-Tag arrays in a BDI cache are no different than their counterparts in a conventional cache. The tags are arranged in sets and ways. Along with its normal function, the tags also have two extra fields: A compression metadata field, and a Segment pointer. The compression metadata field describe the type of compression in the corresponding data line, it also contains a mask to distinguish which base is used for each delta. The segment pointer field is used to point to the first segment of the corresponding data line.\par
+Tag arrays in a BDI cache are no different than their counterparts in a conventional cache. The tags are arranged in sets and ways.\par
+Along with its normal function, the tags also have two extra fields: A compression metadata field, and a Segment pointer. The compression metadata field describes the type of compression in the corresponding data line, it also contains a mask to distinguish which base is used for each delta. The segment pointer field is used to point to the first segment of the corresponding data line.\par
 Other than the addition of compression metadata and segment pointer no other changes happen to the tag array. There are no constraint on its organization or replacement policy. However, because BDI potentially allows more data to be stored in the same cache size, more tags are needed to address this data. The tag array has to generally have more tags than data lines otherwise no benefits come out of compression.
 \subsubsection{Data Array}
 \label{sssec:BDIData}
@@ -90,23 +97,96 @@ This general structure means the cache no longer has coupled tag and data \texti
     \label{fig:BDI_Read}
 \end{figure}
 \subsubsection{Cache Read}
-A flowchart for the BDI cache read is shown in Figure \ref{fig:BDI_Read}. When the request first arrives the tag array is accessed. Part a in the figure shows the case when the tag access results in a hit, then the data line can be read, decompressed, and sent back to the requester right away. If the tag access is a miss, as shown in part b, a request is sent to the next cache level (or main memory), at the same time in parallel the replacement policy selects and evicts a tag. Once the requested line comes back from the next level it can be used to service the requester right away, inserting the line itself into the cache happens after that and off the critical path, as shown in part c.\par
+A flowchart for the BDI cache read is shown in Figure \ref{fig:BDI_Read}. When the request first arrives the tag array is accessed. Part a in the figure shows the case when the tag access results in a hit, then the data line can be read, decompressed, and sent back to the requester right away. If the tag access is a miss, as shown in part b, the victim line is evicted. Then at the same time in parallel a request is sent to the next cache level (or main memory). Once the requested line comes back from the next level it can be used to service the requester right away, inserting the line itself into the cache happens after that and off the critical path, as shown in part c.\par
 So far through the access everything is similar to a conventional cache, Only the insertion of the new line is going to be different. The insertion of the new line starts in part c in the figure. Once the requested line comes back from next level, and in parallel to serving the requester, the line is BDI compressed. Then before the line is actually written to the cache we must verify that there is enough space in the data set for it. If there's not enough segments we have to trigger extra evictions in the current set to free up more segments, those evictions happen according to the tag replacement policy. The size caused evictions are shown in part d, and the line can finally be inserted once enough segments are available as shown in part e.\par
 To avoid segmentation, the authors assume compaction always happens in the data array before each insertion, this is in accordance with previous work.
 \begin{figure}[h]
     \includegraphics[width=\textwidth]{BDI_Write.pdf}
-    \caption[BDI Write]{The flowchart shows the sequence of actions triggered by a write access to the BDI cache. All the blocks are shaded in green because any write request should be off the critical path of the processor regardless of it's status in the cache (hit or miss). Each + sign in any of the blocks signifies an extra latency for tag array access, data array access, or compression.}
+    \caption[BDI Write]{The flowchart shows the sequence of actions triggered by a write access to the BDI cache. All the blocks are shaded in green because any write request should be off the critical path of the processor regardless of its status in the cache (hit or miss). Each + sign in any of the blocks signifies an extra latency for tag array access, data array access, or compression.}
     \label{fig:BDI_Write}
 \end{figure}
 \subsubsection{Cache Write}
 A flowchart of write access to a BDI cache is shown in Figure \ref{fig:BDI_Write}. Because we always use inclusive caches, if a line is in a lower level cache it must also be in it's parent. A cache miss on a write request thus can never happen and a tag array access on a write request will always yield a hit as shown in part a. In parallel to the tag access, the written data line can also be compressed. Once we know the size of the compressed line, we can check whether or not it fits in it's old size, if it's the same or requires a lower number of segments, shown in part b, it can be written right away and the compression metadata in the tag array must also be updated. If the new compressed size is bigger than the old size, insertion of the new written line will trigger size based evictions, the replacement policy will be consulted for tags and their segments to be evicted until enough space for the new data line is free, this is shown in part c. Once there's enough segments the line can finally be written and it's tag's metadata can be updated accordingly as shown in part d.
 As mentioned previously, the authors assume compaction always happens in the data array before each insertion, this is in accordance with previous work.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Dedup Cache
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dedup}
 \label{sec:Dedup}
+\begin{figure}
+    \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{DedupPotential.png}}
+    \caption[Similar lines in a cache]{The figure shows the percentage of similar cache lines in a cache, those present an opportunity for deduplication. Recreated from \protect\cite{dedup}}
+    \label{fig:DedupPotential}
+\end{figure}
+
+The Dedup cache was introduced in \cite{dedup}. The authors have found that in some applications, a lot of lines in the cache can be similar, as shown in Figure \ref{fig:DedupPotential}. They built a cache that takes advantage of this line similarity by doing deduplication, getting rid of the redundant data copies and keeping only one. The structure and operation of such a cache is discussed in this section.
 \subsection{Structure}
 \label{ssec:DedupStructure}
+\begin{figure}
+    \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{Dedup.pdf}}
+    \caption[Dedup Cache]{Conventional (up) vs Dedup (down), showing one set of tags and data from a conventional cache, but one set and related tags from a dedup cache. Tags doubled, Data size same but is now direct mapped.}
+    \label{fig:Dedup}
+\end{figure}
+The Dedup cache introduces some major modifications on top of a conventional cache to support deduplication. The tag array is arranged as normal in sets and ways. The data array is no longer coupled with the tag array, instead it has to be explicitly accessed by pointers. So the data array has no constraints or requirements on its associativity, so it's simply left to be direct mapped. To take advantage of deduplications, the tag array must generally have more entries than the data array.\par
+To facilitate finding and locating duplicate lines, a new structure is added to the cache, called the hash array. The hash array is a storage that saves hashes of data lines. Searching and comparing in the hash array makes it faster and cheaper than searching for duplicate lines directly in the data cache.
+
+The Dedup cache structure is shown in Figure \ref{fig:BDI}
+
 \subsubsection{Tag Array}
 \label{sssec:DedupTag}
+The Dedup tag array organization is no different than a tag array in a conventional cache, it's arranged in sets and ways.\par
+To support deduplication, some other modifications to the tag array need to be made. Deduplication means more than one tag entry will share the same data entry. This poses two requirements on the Dedup cache: Tags must know which data line is the one they need, and if that data line gets evicted, all the tags that use it must be evicted too.\par
+based on the previous requirements, some additions to the tag array entries must be made. For the tags to be able to address their corresponding data lines, a pointer to the data line must be added to the tag entry. Similarly, to facilitate eviction of all the tags connected to a data line when the line is evicted, those tags are organized in a linked list, so each tag entry has two previous and next pointers that point to the two tags before and after it in a linked list. Those pointers need to be big enough to only point to tag sets, since reading a tag requires reading the whole set, the required tag from that set can be resolved by comparing it's data pointer.\par
+Other than the addition of the previous/next and data pointers, there are no other changes to the tag array, only that tags need to have more entries than data to take advantage of deduplication.
 \subsubsection{Data Array}
 \label{sssec:DedupData}
+The data array in a Dedup cache is decoupled from the tag array, and thus it's not required to have the same associativity as the tag array. In fact, this means the data array is not required to have any associativity at all, it can be directly mapped.\par
+To facilitate the eviction of the tags associated with the data line in case it gets evicted, the data lines have an extra metadata field, a tag pointer. This tag pointer is used to point to the first tag in the linked list associated with the data line, in case the data line is evicted the linked list is walked and all the tags in it are evicted.\par
+The data line also includes an extra counter, this counter is used to track how many tags use this data line, this is useful to decide which data lines to evict.
+\subsubsection{Hash Array}
+\label{sssec:DedupHash}
+The hash array in a Dedup cache is used to store hashes of some of the data lines, providing a way to facilitate finding similar lines and deduplicating them. The hash array is a simple set associative structure.\par
+When a data line is hashed, its hash is split into two parts, one is used to index the hash array, while the other is saved in the hash array itself. This process is similar to how memory addresses access the tag array, where part of the address is used to index the array while the other part is saved in the array itself.\par
+Along with each hash saved in the hash array, there's also a pointer to a data line that meets this hash, similar to the data pointers in tag arrays.\par
+The hashes are computed through an XOR tree, based on experiments done in \cite{dedup}. The number of hash entries in the array is small. The authors in \cite{dedup} show that a small number of hash entries is enough to keep collisions less that 1\%.
+
+\subsection{Replacement Policies}
+\label{ssec:DedupRepl}
+While the tag array in a Dedup cache maintains it's normal replacement policies, the data and hash array may have to be treated differently, since they're decoupled from the tag array.
+\subsubsection{Data Array}
+\label{ref:DedupDataRepl}
+The data array replacement policy can be split into two parts, the first part is uses a list to keep track of all free lines in the data array, this list is always consulted first for a free line to insert into. If the free list is empty, indicating that there are no free lines in the data array, the second part of the replacement policy is then used.\par
+If no free lines are available, a random data line is selected, if that line is distinct (not deduplicated, has one tag), it's evicted and used for insertions, otherwise another random line is selected. This process is repeated up to four times, if after those four times no distinct line has been found, the line with the lowest deduplications is evicted and used for insertion.
+\subsubsection{Hash Array}
+\label{ref:DedupHashRepl}
+The hash array is indexed by a part of the hash, the selection of a victim hash set is thus dependant on the hash that needs to be inserted. Once that set is selected, a hash entry is then selected based on the number of deduplication on the data line it point to, if this data line is not deduplicated then this hash can be used and overwritten, otherwise it's not touched. The rationale behind this is to keep hashes pointing to deduplciated lines from getting evicted and causing the cache to miss extra deduplication in favour of a newly incoming line that might not be useful for deduplication.\par
+
+\subsection{Operations}
+\label{ssec:DedupOperations}
+\begin{figure}[h]
+    \includegraphics[width=\textwidth]{Dedup_Read.pdf}
+    \caption[Dedup Read]{The flowchart shows the sequence of actions triggered by a read access to the Dedup cache. Red blocks signify actions happening on the critical path, while green blocks mean actions happening off the critical path. Each + sign in any of the blocks signifies an extra latency for tag array access, data array access, or compression.}
+    \label{fig:Dedup_Read}
+\end{figure}
+\subsubsection{Cache Read}
+A flowchart for the Dedup cache read is shown in Figure \ref{fig:Dedup_Read}. When the request first arrives the tag array is accessed. Part a in the figure shows the case when the tag access results in a hit, then the data line can be read and sent back to the requester right away. If the tag access is a miss, as shown in part b, a victim tag is evicted and it's linked list (if any) has to be updated (i.e. The pointers of the previous and next tags have to connect to each other instead of the victim.). At the same time and in parallel a request is sent to the next cache level (or main memory). Once the requested line comes back from the next level it can be used to service the requester right away, as shown in part c. Inserting the line itself into the cache happens after that and off the critical path.\par
+So far through the access everything is similar to a conventional cache, Only the insertion of the new line is going to be different. The insertion of the new line starts in part d in the figure. Once the requested line comes back from next level, and in parallel to serving the requester, the line is hashed and the hash is used to access the hash array.
+If the hash access hits, then the incoming line must be compared to the line pointed to by the hash, to make sure there are not collisions. There are four outcomes of this scenario, shown in part d:
+\begin{itemize}
+    \item \textbf{Hash Miss:} No similar hash is found, either because similar lines do not exist in the data array, or because the hash array is not big enough to keep track of all data lines. In this case we use the data replacement policy to evict a victim data line. The new tag is inserted and the tag and data lines have to point to each other, the tag will not point to other tags and will not create a linked list because no deduplication is happening yet. A new hash entry will be selected based on the hash replacement policy and will point to the newly inserted data line.
+    \item \textbf{Hash Hit, Line Similar:} In which case the received data line can be deduplicated, it will use the same data line and hash entry. Only the new tag needs to be inserted. It is inserted as the head of the linked list and points to the deduplicated data line. The data line's tag counter (deduplication counter) has to be incremented and it has to pint to the new linked list head.
+    \item \textbf{Hash Hit, Line Invalid:} Because hashes point to data lines, but data lines do not point to hashes, when a data line is evicted, it's associated hash might not, causing a situation like this to arise. In this case, we utilize the invalid line right away instead of consulting the data replacement policy. The tag entry is inserted, it has to point to the data line, but it doesn't point to any other tags because the data line is not deduplicated yet and shouldn't have a linked list associated with it. The data line in return also points to the tag entry, the hash entry is not changed because it already points to the space we used for the data line.
+    \item \textbf{Hash Hit, Line Different:} This case happens only on a hash collision, when two different data lines can be hashed to the same value. Once a collision happens, it's treated like a hash miss with one modification: a new hash insertion is not needed. The same hash entry will be changed to point to the newly inserted data line in only if the line it was previously pointing to was not deduplicated (i.e. Its tag counter is 1). Otherwise it remains untouched.
+\end{itemize}
+
+\begin{figure}[h]
+    \includegraphics[width=\textwidth]{Dedup_Write.pdf}
+    \caption[Dedup Write]{The flowchart shows the sequence of actions triggered by a write access to the Dedup cache. All the blocks are shaded in green because any write request should be off the critical path of the processor regardless of its status in the cache (hit or miss). Each + sign in any of the blocks signifies an extra latency for tag array access, data array access, or compression.}
+    \label{fig:Dedup_Write}
+\end{figure}
+\subsubsection{Cache Write}
+A flowchart of write access to a Dedup cache is shown in Figure \ref{fig:Dedup_Write}. Because we always use inclusive caches, if a line is in a lower level cache it must also be in it's parent. A cache miss on a write request thus can never happen and a tag array access on a write request will always yield a hit as shown in part a. In parallel to the tag access, the written data line can also be hashed.\par
+Once the tag access is finished, we can find out whether the line was distinct or not. If the line is distinct and had no other tags associated with it, then it can be written to right away as shown in part b. If the line is deduplicated, then a write to the line can change it and cause that tag to lose similarity. The insertion of the written data line then can be handled similarly to a miss. It has to access the hash array and look for similar lines, this has one of the four outcomes described above as shown in parts c and d.

@@ -23,10 +23,10 @@ The BDI cache introduced in \cite{bdi} is a cache that takes advantage of simila
 \end{figure}
 The authors in \cite{bdi} have observed that data lines of real world applications have a great degree of redundancy, some of the patterns observed are:
 \begin{itemize}
-    \item \textbf{Zeros:} A lot of cache data lines are zeros, this is a very common case because zeros are usually used to initialize data structures, they're also very common in applications that deal with sparse matrices.
-    \item \textbf{Repeated Values:} This can be observed in applications that initialize large arrays to the same initial value, or in multimedia applications where adjacent pixels could hold the same colours.
-    \item \textbf{Narrow Values:} Programmers typically code for the worst case and thus have to pick larger data types while the majority of the values can fit in smaller narrower data types.
-    \item \textbf{Near Values:} Values that are somewhat similar but not exactly, those are values that have high entropy in their lower bits but have the same higher bits. An example would be a list of pointers that are in the same memory regions, or pixels of an image that have almost similar colours.
+    \item \textbf{Zeros:} A lot of cache data lines are zeros\cite{balakrishnan2003exploiting, ekman2005robust, yang2000frequent}, this is a very common case because zeros are usually used to initialize data structures, they're also very common in applications that deal with sparse matrices.
+    \item \textbf{Repeated Values:} Where a large region of memory contains the same value\cite{sazeides1997predictability, alameldeen2004adaptive}. This can be observed in applications that initialize large arrays to the same initial value, or in multimedia applications where adjacent pixels could hold the same colours.
+    \item \textbf{Narrow Values:} Programmers typically code for the worst case and thus have to pick larger data types while the majority of the values can fit in smaller narrower data types.\cite{alameldeen2004adaptive, islam2010characterization, wilson1999case}
+    \item \textbf{Near Values:} Values that are somewhat similar but not exactly, those are values that have high entropy in their lower bits but have the same higher bits. An example would be a list of pointers that are in the same memory regions, or pixels of an image that have almost similar colours.\cite{wilson1999case, sun2008dhtc}
 \end{itemize}
 Figure \ref{fig:BDIPotential} shows the percentage of lines where those patterns occur in a cache.\par
 In the previously mentioned patterns, the data in a cache line granularity have a low dynamic range, the difference between values in one cache line can be represented using fewer bytes than the original data type. A compression scheme was proposed to utilize this low dynamic range. It works by representing the data line using a base value, and an array of delta values. Since the delta values can be smaller in size than the original data elements, this allows for a lot of savings in the data line itself. If the delta size required to represent the delta is not smaller than the original size, the line is then not compressible and is left untouched.\par
@@ -122,7 +122,7 @@ As mentioned previously, the authors assume compaction always happens in the dat
     \label{fig:DedupPotential}
 \end{figure}
 
-The Dedup cache was introduced in \cite{dedup}. The authors have found that in some applications, a lot of lines in the cache can be similar, as shown in Figure \ref{fig:DedupPotential}. They built a cache that takes advantage of this line similarity by doing deduplication, getting rid of the redundant data copies and keeping only one. The structure and operation of such a cache is discussed in this section.
+The Dedup cache was introduced in \cite{dedup}. The authors have found that in some applications, a lot of lines in the cache can be similar, as shown in Figure \ref{fig:DedupPotential}. Previous cache compression implementations have been proposed to take advantage of duplications, but only focused on special cases like zeros\cite{alameldeen2004adaptive, dusser2009zero}. The authors proposed and built a cache that takes full advantage of the line similarity by doing deduplication, getting rid of the redundant data copies and keeping only one. The structure and operation of such a cache is discussed in this section.
 \subsection{Structure}
 \label{ssec:DedupStructure}
 \begin{figure}

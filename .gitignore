@@ -1,3 +1,4 @@
 *.aux
 diss.*
+!diss.tex
 doc.pdf

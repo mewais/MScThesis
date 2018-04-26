@@ -17,7 +17,12 @@ The BDI cache introduced in \cite{bdi} is a cache that takes advantage of simila
 \label{Compression}
 \subsubsection{Base Delta Compression}
 \begin{figure}
-    \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{BDIPotential.png}}
+    \begin{subfigure}[t]{\textwidth}
+        \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{BDIPotential1.png}}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{BDIPotential2.png}}
+    \end{subfigure}
     \caption[BDI Patterns]{The figure shows the percentage of cache lines that have one of the following patterns: zero, repeated values, narrow values, or near values. Recreated from \protect\cite{bdi}}
     \label{fig:BDIPotential}
 \end{figure}
@@ -117,7 +122,12 @@ As mentioned previously, the authors assume compaction always happens in the dat
 \section{Dedup}
 \label{sec:Dedup}
 \begin{figure}
-    \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{DedupPotential.png}}
+    \begin{subfigure}[t]{\textwidth}
+        \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{DedupPotential1.png}}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{DedupPotential2.png}}
+    \end{subfigure}
     \caption[Similar lines in a cache]{The figure shows the percentage of similar cache lines in a cache, those present an opportunity for deduplication. Recreated from \protect\cite{dedup}}
     \label{fig:DedupPotential}
 \end{figure}
@@ -173,11 +183,11 @@ The hash array is indexed by a part of the hash, the selection of a victim hash 
 \end{figure}
 \subsubsection{Cache Read}
 A flowchart for the Dedup cache read is shown in Figure \ref{fig:Dedup_Read}. When the request first arrives the tag array is accessed. Part a in the figure shows the case when the tag access results in a hit, then the data line can be read and sent back to the requester right away. If the tag access is a miss, as shown in part b, a victim tag is evicted and it's linked list (if any) has to be updated (i.e. The pointers of the previous and next tags have to connect to each other instead of the victim.). At the same time and in parallel a request is sent to the next cache level (or main memory). Once the requested line comes back from the next level it can be used to service the requester right away, as shown in part c. Inserting the line itself into the cache happens after that and off the critical path.\par
-So far through the access everything is similar to a conventional cache, Only the insertion of the new line is going to be different. The insertion of the new line starts in part d in the figure. Once the requested line comes back from next level, and in parallel to serving the requester, the line is hashed and the hash is used to access the hash array.
+So far through the access everything is similar to a conventional cache, Only the insertion of the new line is going to be different. The insertion of the new line starts in part d in the figure. Once the requested line comes back from next level, and in parallel to serving the requester, the line is hashed and the hash is used to access the hash array.\par
 If the hash access hits, then the incoming line must be compared to the line pointed to by the hash, to make sure there are not collisions. There are four outcomes of this scenario, shown in part d:
 \begin{itemize}
     \item \textbf{Hash Miss:} No similar hash is found, either because similar lines do not exist in the data array, or because the hash array is not big enough to keep track of all data lines. In this case we use the data replacement policy to evict a victim data line. The new tag is inserted and the tag and data lines have to point to each other, the tag will not point to other tags and will not create a linked list because no deduplication is happening yet. A new hash entry will be selected based on the hash replacement policy and will point to the newly inserted data line.
-    \item \textbf{Hash Hit, Line Similar:} In which case the received data line can be deduplicated, it will use the same data line and hash entry. Only the new tag needs to be inserted. It is inserted as the head of the linked list and points to the deduplicated data line. The data line's tag counter (deduplication counter) has to be incremented and it has to pint to the new linked list head.
+    \item \textbf{Hash Hit, Line Similar:} In which case the received data line can be deduplicated. It will use the same data line and hash entry. Only the new tag needs to be inserted. It is inserted as the head of the linked list and points to the deduplicated data line. The data line's tag counter (deduplication counter) has to be incremented and it has to point to the new linked list head.
     \item \textbf{Hash Hit, Line Invalid:} Because hashes point to data lines, but data lines do not point to hashes, when a data line is evicted, it's associated hash might not, causing a situation like this to arise. In this case, we utilize the invalid line right away instead of consulting the data replacement policy. The tag entry is inserted, it has to point to the data line, but it doesn't point to any other tags because the data line is not deduplicated yet and shouldn't have a linked list associated with it. The data line in return also points to the tag entry, the hash entry is not changed because it already points to the space we used for the data line.
     \item \textbf{Hash Hit, Line Different:} This case happens only on a hash collision, when two different data lines can be hashed to the same value. Once a collision happens, it's treated like a hash miss with one modification: a new hash insertion is not needed. The same hash entry will be changed to point to the newly inserted data line in only if the line it was previously pointing to was not deduplicated (i.e. Its tag counter is 1). Otherwise it remains untouched.
 \end{itemize}

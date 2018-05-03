@@ -6,6 +6,56 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
+%% Opportunity
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Opportunity}
+\label{sec:Opportunity}
+\begin{figure}
+    \includegraphics[width=\textwidth]{Patterns.pdf}
+    \caption[Patterns in cache lines]{Some of the patterns observed in cache lines.}
+    \label{fig:Patterns}
+\end{figure}
+\begin{figure}
+    \begin{subfigure}[t]{\textwidth}
+        \includegraphics[width=\textwidth]{BDIPotential1.png}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{BDIPotential2.png}
+    \end{subfigure}
+    \caption[Intra-line Patterns]{The figure shows the percentage of cache lines that have one of the following patterns: zero, repeated values, narrow values, or near values. Recreated from \protect\cite{bdi}}
+    \label{fig:BDIPotential}
+\end{figure}
+\begin{figure}
+    \begin{subfigure}[t]{\textwidth}
+        \includegraphics[width=\textwidth]{DedupPotential1.png}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{DedupPotential2.png}
+    \end{subfigure}
+    \caption[Inter-line Patterns]{The figure shows the percentage of similar cache lines in a cache, those present an opportunity for deduplication. Recreated from \protect\cite{dedup}}
+    \label{fig:DedupPotential}
+\end{figure}
+Caches have been observed to have a great degree of redundancy when used with real world applications, those patterns can be observed on different granularities. We consider the patterns found on a cache line granularity, and on granularities smaller than a cache line. Some of those patterns are shown in Figure \ref{fig:Patterns} and are described as follows:
+\begin{enumerate}
+    \item \textbf{Smaller than cache line granularity:}
+    \begin{enumerate}
+        \item \textbf{Zeros:} A lot of cache data lines are fully zeros\cite{balakrishnan2003exploiting, ekman2005robust, yang2000frequent}. This is a very common case because zeros are usually used to initialize data structures. They're also very common in applications that deal with sparse matrices. Shown in part A of the figure.
+        \item \textbf{Repeated Values:} Where a full cache line can contain the same value\cite{sazeides1997predictability, alameldeen2004adaptive}. This can be observed in applications that initialize large arrays to the same initial value, or in multimedia applications where adjacent pixels could hold the same colours. Shown in part B of the figure.
+        \item \textbf{Narrow Values:} Programmers typically code for the worst case and thus have to pick larger data types while the majority of the values can fit in smaller narrower data types\cite{alameldeen2004adaptive, islam2010characterization, wilson1999case}. An example is a cache line of 32 bit integers where all the integer values are less than 256. A similar case is shown in part C of the figure.
+        \item \textbf{Near Values:} Lines that contain values that are somewhat similar but not exactly, those are values that have high entropy in their lower bits but have the same higher bits. An example would be a list of pointers that are in the same memory regions, or pixels of an image that have almost similar colours\cite{wilson1999case, sun2008dhtc}. Part D and E of the figure show examples of this case.
+    \end{enumerate}
+    \item \textbf{Cache line granularity:}
+    \begin{enumerate}
+        \item \textbf{Zero lines:} Similar to the first pattern in the previous point, this case is about data lines being fully zeros. The only difference here is that we consider different zero lines instead of one line being fully zeroed.
+        \item \textbf{Repeated lines:} Multiple cache lines can be exactly the same. This can happen in scientific benchmarks that have symmetry\cite{dedup}. For example the benchmark bwaves\cite{spec} simulates a spherical blast wave around an origin point, which involves perfect similarities.
+    \end{enumerate}
+\end{enumerate}
+Figures \ref{fig:BDIPotential} and \ref{fig:DedupPotential} show the percentage of cache lines where those inter-line and intra-line patterns occur. A modified version of the zsim\cite{zsim} simulator have been used to dump snapshots of the L3 cache every 100,000 L3 accesses, with a maximum of 10 dumps per benchmark. The figures were created by statically analyzing the dumps for patterns.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
 %% BDI Cache
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -16,24 +66,6 @@ The BDI cache introduced in \cite{bdi} is a cache that takes advantage of simila
 \subsection{Compression}
 \label{Compression}
 \subsubsection{Base Delta Compression}
-\begin{figure}
-    \begin{subfigure}[t]{\textwidth}
-        \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{BDIPotential1.png}}
-    \end{subfigure}
-    \begin{subfigure}[b]{\textwidth}
-        \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{BDIPotential2.png}}
-    \end{subfigure}
-    \caption[BDI Patterns]{The figure shows the percentage of cache lines that have one of the following patterns: zero, repeated values, narrow values, or near values. Recreated from \protect\cite{bdi}}
-    \label{fig:BDIPotential}
-\end{figure}
-The authors in \cite{bdi} have observed that data lines of real world applications have a great degree of redundancy, some of the patterns observed are:
-\begin{itemize}
-    \item \textbf{Zeros:} A lot of cache data lines are zeros\cite{balakrishnan2003exploiting, ekman2005robust, yang2000frequent}, this is a very common case because zeros are usually used to initialize data structures, they're also very common in applications that deal with sparse matrices.
-    \item \textbf{Repeated Values:} Where a large region of memory contains the same value\cite{sazeides1997predictability, alameldeen2004adaptive}. This can be observed in applications that initialize large arrays to the same initial value, or in multimedia applications where adjacent pixels could hold the same colours.
-    \item \textbf{Narrow Values:} Programmers typically code for the worst case and thus have to pick larger data types while the majority of the values can fit in smaller narrower data types.\cite{alameldeen2004adaptive, islam2010characterization, wilson1999case}
-    \item \textbf{Near Values:} Values that are somewhat similar but not exactly, those are values that have high entropy in their lower bits but have the same higher bits. An example would be a list of pointers that are in the same memory regions, or pixels of an image that have almost similar colours.\cite{wilson1999case, sun2008dhtc}
-\end{itemize}
-Figure \ref{fig:BDIPotential} shows the percentage of lines where those patterns occur in a cache.\par
 In the previously mentioned patterns, the data in a cache line granularity have a low dynamic range, the difference between values in one cache line can be represented using fewer bytes than the original data type. A compression scheme was proposed to utilize this low dynamic range. It works by representing the data line using a base value, and an array of delta values. Since the delta values can be smaller in size than the original data elements, this allows for a lot of savings in the data line itself. If the delta size required to represent the delta is not smaller than the original size, the line is then not compressible and is left untouched.\par
 Finding the right base is key to compress the data line optimally, and it happens in two steps:
 \begin{itemize}
@@ -42,7 +74,7 @@ Finding the right base is key to compress the data line optimally, and it happen
 \end{itemize}
 The allowed compression schemes and compressed sizes are shown in Figure \ref{fig:BaseDeltaCompression} and table \ref{tab:BDICompressionSizes}.
 \begin{figure}
-    \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{BaseDeltaCompression.pdf}}
+    \includegraphics[width=\textwidth]{BaseDeltaCompression.pdf}
     \caption[Base Delta Compression Examples]{The figure shows examples of different cases of Base Delta compression.}
     \label{fig:BaseDeltaCompression}
 \end{figure}
@@ -79,7 +111,7 @@ A compression unit treats the line as elements of its corresponding base size. I
 \subsection{Structure}
 \label{ssec:BDIStructure}
 \begin{figure}
-    \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{BDI.pdf}}
+    \includegraphics[width=\textwidth]{BDI.pdf}
     \caption[BDI Cache]{Conventional (up) vs BDI (down), showing one set of each. Tags doubled, Data size same but divided to segments.}
     \label{fig:BDI}
 \end{figure}
@@ -121,22 +153,11 @@ As mentioned previously, the authors assume compaction always happens in the dat
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Dedup}
 \label{sec:Dedup}
-\begin{figure}
-    \begin{subfigure}[t]{\textwidth}
-        \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{DedupPotential1.png}}
-    \end{subfigure}
-    \begin{subfigure}[b]{\textwidth}
-        \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{DedupPotential2.png}}
-    \end{subfigure}
-    \caption[Similar lines in a cache]{The figure shows the percentage of similar cache lines in a cache, those present an opportunity for deduplication. Recreated from \protect\cite{dedup}}
-    \label{fig:DedupPotential}
-\end{figure}
-
 The Dedup cache was introduced in \cite{dedup}. The authors have found that in some applications, a lot of lines in the cache can be similar, as shown in Figure \ref{fig:DedupPotential}. Previous cache compression implementations have been proposed to take advantage of duplications, but only focused on special cases like zeros\cite{alameldeen2004adaptive, dusser2009zero}. The authors proposed and built a cache that takes full advantage of the line similarity by doing deduplication, getting rid of the redundant data copies and keeping only one. The structure and operation of such a cache is discussed in this section.
 \subsection{Structure}
 \label{ssec:DedupStructure}
 \begin{figure}
-    \makebox[\textwidth][c]{\includegraphics[width=1.5\textwidth]{Dedup.pdf}}
+    \includegraphics[width=\textwidth]{Dedup.pdf}
     \caption[Dedup Cache]{Conventional (up) vs Dedup (down), showing one set of tags and data from a conventional cache, but one set and related tags from a dedup cache. Tags doubled, Data size same but is now direct mapped.}
     \label{fig:Dedup}
 \end{figure}
@@ -167,11 +188,11 @@ The hashes are computed through an XOR tree, based on experiments done in \cite{
 \label{ssec:DedupRepl}
 While the tag array in a Dedup cache maintains it's normal replacement policies, the data and hash array may have to be treated differently, since they're decoupled from the tag array.
 \subsubsection{Data Array}
-\label{ref:DedupDataRepl}
+\label{sssec:DedupDataRepl}
 The data array replacement policy can be split into two parts, the first part is uses a list to keep track of all free lines in the data array, this list is always consulted first for a free line to insert into. If the free list is empty, indicating that there are no free lines in the data array, the second part of the replacement policy is then used.\par
 If no free lines are available, a random data line is selected, if that line is distinct (not deduplicated, has one tag), it's evicted and used for insertions, otherwise another random line is selected. This process is repeated up to four times, if after those four times no distinct line has been found, the line with the lowest deduplications is evicted and used for insertion.
 \subsubsection{Hash Array}
-\label{ref:DedupHashRepl}
+\label{sssec:DedupHashRepl}
 The hash array is indexed by a part of the hash, the selection of a victim hash set is thus dependant on the hash that needs to be inserted. Once that set is selected, a hash entry is then selected based on the number of deduplication on the data line it point to, if this data line is not deduplicated then this hash can be used and overwritten, otherwise it's not touched. The rationale behind this is to keep hashes pointing to deduplciated lines from getting evicted and causing the cache to miss extra deduplication in favour of a newly incoming line that might not be useful for deduplication.\par
 
 \subsection{Operations}

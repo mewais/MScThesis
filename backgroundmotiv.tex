@@ -1,8 +1,8 @@
 %% The following is a directive for TeXShop to indicate the main file
 %%!TEX root = diss.tex
 
-\chapter{Background}
-\label{ch:Background}
+\chapter{Background and Motivation}
+\label{ch:BackgroundMotiv}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -39,14 +39,14 @@
 \end{figure}
 Caches have been observed to have a great degree of redundancy when used with real world applications, those patterns can be observed on different granularities. We consider the patterns found on a cache line granularity, and on granularities smaller than a cache line. Some of those patterns are shown in Figure \ref{fig:Patterns} and are described as follows:
 \begin{enumerate}
-    \item \textbf{Smaller than cache line granularity:}
+    \item \textbf{intra-line granularity:}
     \begin{enumerate}
         \item \textbf{Zeros:} A lot of cache data lines are fully zeros\cite{balakrishnan2003exploiting, ekman2005robust, yang2000frequent}. This is a very common case because zeros are usually used to initialize data structures. They're also very common in applications that deal with sparse matrices. Shown in part A of the figure.
         \item \textbf{Repeated Values:} Where a full cache line can contain the same value\cite{sazeides1997predictability, alameldeen2004adaptive}. This can be observed in applications that initialize large arrays to the same initial value, or in multimedia applications where adjacent pixels could hold the same colours. Shown in part B of the figure.
         \item \textbf{Narrow Values:} Programmers typically code for the worst case and thus have to pick larger data types while the majority of the values can fit in smaller narrower data types\cite{alameldeen2004adaptive, islam2010characterization, wilson1999case}. An example is a cache line of 32 bit integers where all the integer values are less than 256. A similar case is shown in part C of the figure.
         \item \textbf{Near Values:} Lines that contain values that are somewhat similar but not exactly, those are values that have high entropy in their lower bits but have the same higher bits. An example would be a list of pointers that are in the same memory regions, or pixels of an image that have almost similar colours\cite{wilson1999case, sun2008dhtc}. Part D and E of the figure show examples of this case.
     \end{enumerate}
-    \item \textbf{Cache line granularity:}
+    \item \textbf{inter-line granularity:}
     \begin{enumerate}
         \item \textbf{Zero lines:} Similar to the first pattern in the previous point, this case is about data lines being fully zeros. The only difference here is that we consider different zero lines instead of one line being fully zeroed.
         \item \textbf{Repeated lines:} Multiple cache lines can be exactly the same. This can happen in scientific benchmarks that have symmetry\cite{dedup}. For example the benchmark bwaves\cite{spec} simulates a spherical blast wave around an origin point, which involves perfect similarities.
@@ -60,7 +60,7 @@ Figures \ref{fig:BDIPotential} and \ref{fig:DedupPotential} show the percentage 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{BDI}
+\section{Intra-line Compression}
 \label{sec:BDI}
 The BDI cache introduced in \cite{bdi} is a cache that takes advantage of similarities within data lines to compress those lines into smaller sizes. In the following section we discuss the BDI cache, it's compression, structure, and operation.
 \subsection{Compression}
@@ -151,7 +151,7 @@ As mentioned previously, the authors assume compaction always happens in the dat
 %% Dedup Cache
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Dedup}
+\section{Inter-line Compression}
 \label{sec:Dedup}
 The Dedup cache was introduced in \cite{dedup}. The authors have found that in some applications, a lot of lines in the cache can be similar, as shown in Figure \ref{fig:DedupPotential}. Previous cache compression implementations have been proposed to take advantage of duplications, but only focused on special cases like zeros\cite{alameldeen2004adaptive, dusser2009zero}. The authors proposed and built a cache that takes full advantage of the line similarity by doing deduplication, getting rid of the redundant data copies and keeping only one. The structure and operation of such a cache is discussed in this section.
 \subsection{Structure}
@@ -221,3 +221,64 @@ If the hash access hits, then the incoming line must be compared to the line poi
 \subsubsection{Cache Write}
 A flowchart of write access to a Dedup cache is shown in Figure \ref{fig:Dedup_Write}. Because we always use inclusive caches, if a line is in a lower level cache it must also be in it's parent. A cache miss on a write request thus can never happen and a tag array access on a write request will always yield a hit as shown in part a. In parallel to the tag access, the written data line can also be hashed.\par
 Once the tag access is finished, we can find out whether the line was distinct or not. If the line is distinct and had no other tags associated with it, then it can be written to right away as shown in part b. If the line is deduplicated, then a write to the line can change it and cause that tag to lose similarity. The insertion of the written data line then can be handled similarly to a miss. It has to access the hash array and look for similar lines, this has one of the four outcomes described above as shown in parts c and d.
+
+\section{Motivation}
+\label{ch:Motivation}
+Deduplication and base delta immediate compression work on two different domains, one is inter-line and works on a cache line granularity while the other works intra-line with a granularity of two, four, or eight bytes. This means that they can both be combined to deduplicate similar lines and compress each of those lines at the same time.
+We look at four different benchmarks with different cache patterns and behaviours. One benchmark is very compressible by BDI, the second is compressible using deduplication, the third and fourth are completely incompressible and compressible by both, respectively. We analyze how these benchmarks respond to each type of compression and how a combination of both compression techniques can improve on them.\par
+The four benchmarks are:
+\begin{figure}
+    \begin{subfigure}{\textwidth}
+        \includegraphics[width=\textwidth]{inversek2j.png}
+        \caption{inversek2j}
+        \label{fig:inversek2j}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \includegraphics[width=\textwidth]{dedup.png}
+        \caption{dedup}
+        \label{fig:dedup}
+    \end{subfigure}
+    \caption[Compression in benchmarks1]{The figure shows the percentage of compressed data compared to original cache sizes.}
+\end{figure}
+\begin{figure}
+    \begin{subfigure}{\textwidth}
+        \includegraphics[width=\textwidth]{jmeint.png}
+        \caption{jmeint}
+        \label{fig:jmeint}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \includegraphics[width=\textwidth]{bwaves.png}
+        \caption{bwaves}
+        \label{fig:bwaves}
+    \end{subfigure}
+    \caption[Compression in benchmarks2]{The figure shows the percentage of compressed data compared to original cache sizes.}
+\end{figure}
+\begin{itemize}
+    \item \textbf{inversek2j:} The inversek2j benchmark\cite{axbench} is used in robotic and animation applications. It uses the kinematic equation to compute the angles of 2-joint robotic arms. It deals with arrays of floats that represent angles. Inversek2j is BDI sensitive but doesn't have enough potential to benifit from deudplication. Figure \ref{fig:inversek2j} shows the Dedup, BDI, and Dedup+BDI compressed data size of inversek2j cache dumps as a percentage of the original size.
+    \item \textbf{dedup:} The dedup benchmark\cite{parsec} compresses data streams with deduplication. It treats data as integer arrays, divides them into chunks, then tries to build a dictionary out of those chunks and use them for compression. The dedup benchmark is deduplication sensitive. Figure \ref{fig:dedup} shows the Dedup, BDI, and Dedup+BDI compressed data size of dedup cache dumps as a percentage of the original size.
+    \item \textbf{jmeint:} The jmeint benchmark\cite{axbench} is a triangle intersection workload that is used in 3d gaming. It takes coordinates of two triangles as its input. This makes most of the data insensitive to BDI compression and deduplication. Figure \ref{fig:jmeint} shows the Dedup, BDI, and Dedup+BDI compressed data size of jmeint cache dumps as a percentage of the original size.
+    \item \textbf{bwaves:} The bwaves benchmark\cite{spec} simulates a spherical blast wave. It also contains (at least at the first few cache dumps) a lot of zero lines which are 2D compressible through deduplication and BDI. Figure \ref{fig:bwaves} shows the Dedup, BDI, and Dedup+BDI compressed data size of bwaves cache dumps as a percentage of the original size.
+\end{itemize}
+\begin{figure}
+    \begin{subfigure}[t]{\textwidth}
+        \includegraphics[width=\textwidth]{CompPotential1.png}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{CompPotential2.png}
+    \end{subfigure}
+    \caption[Compressible lines]{The figure shows the percentage of cache lines that can be compressed using Dedup, BDI, or both techniques combined together.}
+    \label{fig:CompPossibility}
+\end{figure}
+Generalizing on what we found. We used the same cache dumps to create Figure \ref{fig:CompPossibility} showing the percentage of cache lines that can be compressed by BDI, the percentage of cache lines that are similar and thus deduplicable, and the percentage of cache lines that can be compressed using both schemes.\par
+As Figure \ref{fig:CompPossibility} shows, BDI and Deduplications are orthogonal to some degree. The existence of some cache lines that can be compressed by only one of both compression schemes means they can work separately without affecting each other. However, because there are lines that can be compressed by both schemes, BDI can lose some of it's improvements because of deduplication. For example, if ten lines were similar and compressible by BDI, using BDI will compress each of them on it's own, using deduplication will reduce all ten lines to only one line. Using both techniques means deduplication still compresses ten lines to one, but BDI now compresses only one line instead of 10. The improvements of BDI can thus be limited by deduplication.\par
+\begin{figure}
+    \begin{subfigure}[t]{\textwidth}
+        \includegraphics[width=\textwidth]{CompSize1.png}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{CompSize2.png}
+    \end{subfigure}
+    \caption[Size after compression]{The figure shows the size of data in a cache after using compression. BDI, Dedup, and a combination of both is shown.}
+    \label{fig:CompSize}
+\end{figure}
+Nevertheless, combining BDI and Deduplication can still outperform each of them on its own. Figure \ref{fig:CompSize} shows the compressed data size when using BDI, Dedup, and Dedup+BDI. In its worst case Dedup+BDI performs the same as the best out of Dedup and BDI, in most cases it compresses even more on both. Note that the experiments used to create Figure \ref{fig:CompSize} are done statically on cache dumps and thus are completely missing the time dimension and its effect on compression. As time passes more requests to data lines can occur, with more requests the probability that compression can occur increases allowing for better compression.

@@ -223,41 +223,38 @@ A flowchart of write access to a Dedup cache is shown in Figure \ref{fig:Dedup_W
 Once the tag access is finished, we can find out whether the line was distinct or not. If the line is distinct and had no other tags associated with it, then it can be written to right away as shown in part b. If the line is deduplicated, then a write to the line can change it and cause that tag to lose similarity. The insertion of the written data line then can be handled similarly to a miss. It has to access the hash array and look for similar lines, this has one of the four outcomes described above as shown in parts c and d.
 
 \section{Motivation}
-\label{ch:Motivation}
+\label{sec:Motivation}
 Deduplication and base delta immediate compression work on two different domains, one is inter-line and works on a cache line granularity while the other works intra-line with a granularity of two, four, or eight bytes. This means that they can both be combined to deduplicate similar lines and compress each of those lines at the same time.
 We look at four different benchmarks with different cache patterns and behaviours. One benchmark is very compressible by BDI, the second is compressible using deduplication, the third and fourth are completely incompressible and compressible by both, respectively. We analyze how these benchmarks respond to each type of compression and how a combination of both compression techniques can improve on them.\par
 The four benchmarks are:
 \begin{figure}
     \begin{subfigure}{\textwidth}
-        \includegraphics[width=\textwidth]{inversek2j.png}
-        \caption{inversek2j}
-        \label{fig:inversek2j}
+        \includegraphics[width=\textwidth]{canneal.png}
+        \caption{canneal}
+        \label{fig:canneal}
     \end{subfigure}
     \begin{subfigure}{\textwidth}
-        \includegraphics[width=\textwidth]{dedup.png}
-        \caption{dedup}
-        \label{fig:dedup}
+        \includegraphics[width=\textwidth]{lbm.png}
+        \caption{lbm}
+        \label{fig:lbm}
     \end{subfigure}
-    \caption[Compression in benchmarks1]{The figure shows the percentage of compressed data compared to original cache sizes.}
-\end{figure}
-\begin{figure}
     \begin{subfigure}{\textwidth}
         \includegraphics[width=\textwidth]{jmeint.png}
         \caption{jmeint}
         \label{fig:jmeint}
     \end{subfigure}
     \begin{subfigure}{\textwidth}
-        \includegraphics[width=\textwidth]{bwaves.png}
-        \caption{bwaves}
-        \label{fig:bwaves}
+        \includegraphics[width=\textwidth]{libquantum.png}
+        \caption{libquantum}
+        \label{fig:libquantum}
     \end{subfigure}
-    \caption[Compression in benchmarks2]{The figure shows the percentage of compressed data compared to original cache sizes.}
+    \caption[Compression in benchmarks]{The figure shows the percentage of compressed data compared to original cache sizes.}
 \end{figure}
 \begin{itemize}
-    \item \textbf{inversek2j:} The inversek2j benchmark\cite{axbench} is used in robotic and animation applications. It uses the kinematic equation to compute the angles of 2-joint robotic arms. It deals with arrays of floats that represent angles. Inversek2j is BDI sensitive but doesn't have enough potential to benifit from deudplication. Figure \ref{fig:inversek2j} shows the Dedup, BDI, and Dedup+BDI compressed data size of inversek2j cache dumps as a percentage of the original size.
-    \item \textbf{dedup:} The dedup benchmark\cite{parsec} compresses data streams with deduplication. It treats data as integer arrays, divides them into chunks, then tries to build a dictionary out of those chunks and use them for compression. The dedup benchmark is deduplication sensitive. Figure \ref{fig:dedup} shows the Dedup, BDI, and Dedup+BDI compressed data size of dedup cache dumps as a percentage of the original size.
+    \item \textbf{canneal:} The canneal benchmark\cite{parsec} is a cache-aware implementation of a simulated annealing algorithm used for routing in chip designs. canneal is BDI sensitive but doesn't have enough potential to benifit from deudplication. Figure \ref{fig:inversek2j} shows the Dedup, BDI, and Dedup+BDI compressed data size of canneal cache dumps as a percentage of the original size.
+    \item \textbf{lbm:} The lbm benchmark\cite{spec} implements the "Lattice Boltzman Method" to simulate incompressible fluids in 3D. The output from lbm benchmark is values representing 3d velocity vectors for each cell in the simulation. Because of this, lbm is deduplication sensitive. Figure \ref{fig:lbm} shows the Dedup, BDI, and Dedup+BDI compressed data size of lbm cache dumps as a percentage of the original size.
     \item \textbf{jmeint:} The jmeint benchmark\cite{axbench} is a triangle intersection workload that is used in 3d gaming. It takes coordinates of two triangles as its input. This makes most of the data insensitive to BDI compression and deduplication. Figure \ref{fig:jmeint} shows the Dedup, BDI, and Dedup+BDI compressed data size of jmeint cache dumps as a percentage of the original size.
-    \item \textbf{bwaves:} The bwaves benchmark\cite{spec} simulates a spherical blast wave. It also contains (at least at the first few cache dumps) a lot of zero lines which are 2D compressible through deduplication and BDI. Figure \ref{fig:bwaves} shows the Dedup, BDI, and Dedup+BDI compressed data size of bwaves cache dumps as a percentage of the original size.
+    \item \textbf{libquantum:} The libquantum library\cite{spec} is used to simulate quantum computers. Specifically it simulates the Shor factorization algorithm widely used for cryptanalysis. It contains (at least at the first few cache dumps) a lot of zero lines which are 2D compressible through deduplication and BDI. Figure \ref{fig:libquantum} shows the Dedup, BDI, and Dedup+BDI compressed data size of libquantum cache dumps as a percentage of the original size.
 \end{itemize}
 \begin{figure}
     \begin{subfigure}[t]{\textwidth}

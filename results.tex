@@ -191,6 +191,21 @@ However, the decrease of MPKI doesn't always necessitate speedup. The benchmark 
 Figure \ref{fig:all_speedup} shows the speedup for all the benchmarks when simulated with a compressed 0.5MB and 4MB LLC caches with tags four times the data lines, respectively. We have chosen those two sizes because some benchmarks are only cache sensitive with lower cache sizes while others are only cache sensitive at higher cache sizes.\par
 For the cache insensitive benchmarks, the DedupBDI cache performs as fast as the conventional caches. It does not provide anymore speedup. But it allows the data to be compressed, providing area and power savings. For the cache sensitive benchmarks, DedupBDI outperforms the conventional, Dedup, and DedupBDI caches altogether.
 
+\section{Tag to Data Ratio}
+\label{sec:tagratio}
+\begin{figure}
+    \begin{subfigure}{\textwidth}
+        \includegraphics[width=\textwidth]{compare-speedup.png}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \includegraphics[width=\textwidth]{compare-compression.png}
+    \end{subfigure}
+    \caption[All benchmarks: Tag Ratio]{Showing performance and compression ratio for all benchmarks using DedupBDI 4MB caches with tags four times data and twice the data.}
+    \label{fig:all_compare}
+\end{figure}
+Figure \ref{fig:all_compare} shows the difference between two 4MB DedupBDI caches, one with tags twice the data entries and the other with tags four times the entries. Using the tags as four times the data entries means the data array will be twice as small but it also requires compression to be highly effective. Otherwise the cache will run out of data space quickly and throttle the performance. As Figure \ref{fig:all_compare} shows, the smaller 4MB-4 cache achieves better performance than the 4MB-2 and has better compression ratio. We've chosen caches with four times the tags to be our default compressed cache size.
+
+
 \section{Overhead Analysis}
 \label{sec:Overhead}
 \begin{table}[]
@@ -198,32 +213,32 @@ For the cache insensitive benchmarks, the DedupBDI cache performs as fast as the
     \begin{tabular}{lllll}
                & Conv   & BDI    & Dedup  & DedupBDI \\ \hline
     Tags       &        &        &        &          \\
-    \# Entries & 65536  & 65536  & 65536  & 65536    \\
-    Entry Size & 46b    & 46b    & 46b    & 46b      \\
-    Overhead   & 8b     & 15b    & 46b    & 49b      \\
-    Total Size & 432KB  & 488KB  & 736KB  & 760KB    \\ \hline
+    \# Entries & 8192   & 8192   & 8192   & 8192     \\
+    Entry Size & 49b    & 49b    & 49b    & 49b      \\
+    Overhead   & 6b     & 15b    & 35b    & 42b      \\
+    Total Size & 55KB   & 64KB   & 84KB   & 91KB     \\ \hline
     Data       &        &        &        &          \\
-    \# Entries & 65536  & 16384  & 16384  & 16384    \\
+    \# Entries & 8192   & 2048   & 2048   & 2048     \\
     Entry Size & 64B    & 64B    & 64B    & 64B      \\
-    Overhead   &        &        & 16b    & 16B      \\
-    FreeList   &        &        & 28KB   & 10KB     \\
-    Total Size & 4MB    & 1MB    & 1.06MB & 1.26MB   \\ \hline
+    Overhead   &        &        & 11b    & 11B      \\
+    FreeList   &        &        & 2.75KB & 896B     \\
+    Total Size & 0.5MB  & 125KB  & 133.5KB & 150.875KB   \\ \hline
     Hash       &        &        &        &          \\
     \# Entries &        &        & 64     & 64       \\
     Entry Size &        &        & 10b    & 10b      \\
-    Overhead   &        &        & 14b    & 21b      \\
-    Total Size &        &        & 192B   & 248B     \\ \hline
-    Total Size & 4.42MB & 1.48MB & 1.78MB & 2MB  
+    Overhead   &        &        & 11b    & 14b      \\
+    Total Size &        &        & 168B   & 192B     \\ \hline
+    Total Bank Size & 567KB & 189KB & 217.6KB & 242KB  
     \end{tabular}
     \caption{4MB cache size and overhead in all configurations.}
     \label{tab:overhead}
 \end{table}
-Table \ref{tab:overhead} shows the overheads in the cache designs we have, assuming an associativity of 16, cache size of 4MB and LRU replacement policy. The overhead in all caches comes from three (four) different sources:
+Table \ref{tab:overhead} shows the overheads in one bank in the cache designs we have, assuming an 8 banked cache, with an associativity of 16, cache size of 4MB and LRU replacement policy. The overhead in all caches comes from three (four) different sources:
 \begin{itemize}
     \item \textbf{Tag Overhead:}
     \begin{itemize}
         \item \textbf{conventional:} In conventional caches, assuming LRU replacement policy, the tag overhead per entry consists of one bit for Valid, one for Dirty, and log2(associativity) bits for the LRU replacement. 
-        \item \textbf{BDI:} In BDI there's an extra overhead of 4 bits for compression encoding and log2(associativity*\#Segments) bits for segment pointers. Along with the normal overhead from a conventional cache.
+        \item \textbf{BDI:} In BDI there's an extra overhead of 4 bits for compression encoding and log2(associativity*\#SegmentsPerLine) bits for segment pointers. Along with the normal overhead from a conventional cache. Note that in BDI the data array has half or one quarter of the associativity of the tag array.
         \item \textbf{Dedup:} On top of the conventional cache overhead, Dedup adds two pointers per tag entry for the next/previous tag to build a linked list, each one of those is log2(\#Tags/associativity) bits. It also adds pointers to the data line associated with it. Since Dedup data arrays are direct mapped the data pointer size is log2(\#Data).
         \item \textbf{DedupBDI:} DedupBDI adds the same overhead as the BDI cache. It also adds the same linked list pointers from the Dedup cache, but it's data pointer size is different from the Dedup cache. Because the data array in DedupBDI maintains its associativity, the data pointer size is log2(\#Data/associativity).
     \end{itemize}
@@ -242,11 +257,41 @@ Table \ref{tab:overhead} shows the overheads in the cache designs we have, assum
     \item \textbf{Hash Array:} The Dedup and DedupBDI have the same hash array design. The hash array saves part of the hash as a tag while the other part is used as an index. The hash array then has the size of \#Hash*(HashSize-log2(\#Hash/associativity)). The Dedup and DedupBDI hash arrays then have some extra overhead:
     \begin{itemize}
         \item \textbf{Dedup:} each hash entry has a data pointer of size log2(\#Data)
-        \item \textbf{DedupBDI:} each hash entry has a data pointer of size log2(\#Data/associativity) and segment pointer of size log2(associativity*\#Segments) bits.
+        \item \textbf{DedupBDI:} each hash entry has a data pointer of size log2(\#Data/associativity) and segment pointer of size log2(associativity*\#SegmentsPerLine) bits.
     \end{itemize}
 \end{itemize}
 It's obvious that DedupBDI has the highest amount of overhead. But it also gains the most savings and speedups.
 
 \section{Area and Power}
 \label{sec:areapower}
-We used cacti6\cite{cacti} to get power and area estimations for all the cache types and sizes we simulated. The results are shown in \ref{}
+\begin{table}[]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{llllll}
+    \multicolumn{2}{c}{Cache}                                                 & \multicolumn{1}{c}{\begin{tabular}[c]{@{}c@{}}Access Latency\\ (ns)\end{tabular}} & \multicolumn{1}{c}{\begin{tabular}[c]{@{}c@{}}Dynamic Read\\ Energy (nJ)\end{tabular}} & \multicolumn{1}{c}{\begin{tabular}[c]{@{}c@{}}Leakage Power\\ (mW)\end{tabular}} & \multicolumn{1}{c}{Area (mm2)} \\ \hline
+    \multicolumn{1}{l|}{\multirow{5}{*}{CONV}}     & \multicolumn{1}{l|}{0.5} & 1.040842                                                                          & .28134914                                                                              & 353.32648                                                                        & 12.2026068                     \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{1}   & 1.116541                                                                          & .29846783                                                                              & 530.37712                                                                        & 13.073461                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{2}   & 1.285388                                                                          & .33135866                                                                              & 884.79016                                                                        & 14.771159                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{4}   & 1.46331                                                                           & .3967712                                                                               & 1579.6440                                                                        & 18.129441                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{8}   & 1.917741                                                                          & .526493                                                                                & 2978.4016                                                                        & 24.880933                      \\ \cline{1-2}
+    \multicolumn{1}{l|}{\multirow{5}{*}{BDI}}      & \multicolumn{1}{l|}{0.5} & 1.010391                                                                          & .26910215                                                                              & 236.31936                                                                        & 11.605206                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{1}   & 1.045793                                                                          & .27524057                                                                              & 298.75176                                                                        & 11.921437                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{2}   & 1.126943                                                                          & .28691374                                                                              & 415.8200                                                                         & 12.527563                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{4}   & 1.297986                                                                          & .3083546                                                                               & 655.4520                                                                         & 13.701536                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{8}   & 1.385186                                                                          & .3511512                                                                               & 1130.4840                                                                        & 15.981861                      \\ \cline{1-2}
+    \multicolumn{1}{l|}{\multirow{5}{*}{DEDUP}}    & \multicolumn{1}{l|}{0.5} & 1.026490                                                                          & .26946535                                                                              & 240.20488                                                                        & 11.623081                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{1}   & 1.070838                                                                          & .27615777                                                                              & 310.98856                                                                        & 11.976806                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{2}   & 1.156487                                                                          & .28876076                                                                              & 440.1304                                                                         & 12.642104                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{4}   & 1.396239                                                                          & .3130041                                                                               & 714.2168                                                                         & 13.976212                      \\
+    \multicolumn{1}{l|}{}                          & \multicolumn{1}{l|}{8}   & 1.481563                                                                          & .3610318                                                                               & 1263.6328                                                                        & 16.601801                      \\ \cline{1-2}
+    \multicolumn{1}{c|}{\multirow{5}{*}{DEDUPBDI}} & \multicolumn{1}{l|}{0.5} & .971216                                                                           & .27016215                                                                              & 246.69448                                                                        & 11.655013                      \\
+    \multicolumn{1}{c|}{}                          & \multicolumn{1}{l|}{1}   & 1.085028                                                                          & .27733513                                                                              & 324.34256                                                                        & 12.039511                      \\
+    \multicolumn{1}{c|}{}                          & \multicolumn{1}{l|}{2}   & 1.172562                                                                          & .29132959                                                                              & 468.7792                                                                         & 12.778273                      \\
+    \multicolumn{1}{c|}{}                          & \multicolumn{1}{l|}{4}   & 1.428335                                                                          & .3183339                                                                               & 773.8560                                                                         & 14.257854                      \\
+    \multicolumn{1}{c|}{}                          & \multicolumn{1}{l|}{8}   & 1.522417                                                                          & .3725894                                                                               & 1392.7656                                                                        & 17.212904                      \\ \cline{1-2}
+    \end{tabular}%
+    }
+    \caption{Area, Power, Energy, and Access Latency for all cache sizes and configurations.}
+    \label{tab:areapower}
+\end{table}
+We used cacti6\cite{cacti} to get power and area estimations for all the cache types and sizes we simulated. The results are shown in \ref{tab:areapower}. The results in the table are consistent with what we've discussed so far. Compressed caches have lower access latencies, energy and power consumption than their conventional counterparts because of their lesser size. With DedupBDI consuming the most resources out of the compressed caches. The extra resources however are justified as they allow better speedup and compression.

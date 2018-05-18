@@ -53,27 +53,29 @@ We simulated different conventional L3 cache sizes ranging from 0.5MB to 8MB. We
 \label{sec:case_study}
 In this section we describe the four benchmarks we picked in \ref{sec:Motivation}. The benchmarks have different cache patterns and behaviors. During the static analysis done in \ref{sec:Motivation} canneal was only compressible by BDI, dedup was compressible using deduplication, jmeint was uncompressible while libquantum was compressible by both. We analyze how these benchmarks behave when simulated in a real computing system with compressed caches.\par
 \begin{figure}
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{\textwidth}
         \includegraphics[width=\textwidth]{canneal-compratio.png}
         \caption{canneal}
     \end{subfigure}
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{\textwidth}
         \includegraphics[width=\textwidth]{lbm-compratio.png}
         \caption{lbm}
     \end{subfigure}
-    \begin{subfigure}{0.5\textwidth}
+    \caption[Case Study: Compression1]{Showing four benchmarks and their compression ratio using different compressed caches.}
+    \label{fig:case_compratio1}
+\end{figure}
+\begin{figure}
+    \begin{subfigure}{\textwidth}
         \includegraphics[width=\textwidth]{jmeint-compratio.png}
         \caption{jmeint}
     \end{subfigure}
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{\textwidth}
         \includegraphics[width=\textwidth]{libquantum-compratio.png}
         \caption{libquantum}
     \end{subfigure}
-    \caption[Case Study: Compression]{Showing four benchmarks and their compression ratio using different compressed caches.}
-    \label{fig:case_compratio}
+    \caption[Case Study: Compression2]{Showing four benchmarks and their compression ratio using different compressed caches.}
+    \label{fig:case_compratio2}
 \end{figure}
-Figure \ref{fig:case_compratio} shows the compression ratio of the four benchmarks. Compression ratio is calculated as the ratio between valid tags and valid data entries. The blue columns are caches with tag entries double the data entries, while the orange ones have tags four times the data entries. As expected, canneal shows some compression with BDI but nothing with Dedup, lbm shows compression using Dedup but not using BDI, jmeint shows no compression using any of the caches, while libquantum shows compression using all of them. The DedupBDI cache combines the best of both worlds and either outperforms or at least does as good as BDI or Dedup.\par
-Figures \ref{fig:case_mpki} and \ref{fig:case_speedup} show the MPKI and Speedup for the four benchmarks under all cache configurations. Apart from the incompressible jmeint, all the benchmarks show huge speedups (up to 70\% in case of libquantum). DedupBDI is the best performing cache in canneal, lbm and libquantum. But it's slightly worse (0.01\% slowdown) than a conventional cache in jmeint.
 \begin{figure}
     \begin{subfigure}{0.5\textwidth}
         \includegraphics[width=\textwidth]{canneal-mpki.png}
@@ -114,6 +116,9 @@ Figures \ref{fig:case_mpki} and \ref{fig:case_speedup} show the MPKI and Speedup
     \caption[Case Study: Speedup]{Showing four benchmarks and their speedup using different compressed caches.}
     \label{fig:case_speedup}
 \end{figure}
+Figures \ref{fig:case_compratio1} and \ref{fig:case_compratio2} show the compression ratio of the four benchmarks. Compression ratio is calculated as the ratio between valid tags and valid data entries. The blue columns are caches with tag entries double the data entries, while the orange ones have tags four times the data entries. As expected, canneal shows some compression with BDI but nothing with Dedup, lbm shows compression using Dedup but not using BDI, jmeint shows no compression using any of the caches, while libquantum shows compression using all of them. The DedupBDI cache combines the best of both worlds and either outperforms or at least does as good as BDI or Dedup.\par
+Figures \ref{fig:case_mpki} and \ref{fig:case_speedup} show the MPKI and Speedup for the four benchmarks under all cache configurations. Apart from the incompressible jmeint, all the benchmarks show big speedups (up to 70\% in case of libquantum). DedupBDI is the best performing cache in canneal, lbm and libquantum. But it's slightly worse (0.05\% slowdown) than a conventional cache in jmeint.\par
+This shows how the DedupBDI cache brings together the best of both worlds. It is able to function exactly similar to BDI and Dedup in cases that are only compressible by one, and it is able to use both compressions at the same time to enhance compression and performance. Although the cost for this is its increased complexity and access latency that causes it to perform slightly worse in incompressible cases.
 
 \section{Compression}
 \label{sec:Compression}

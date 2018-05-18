@@ -22,7 +22,7 @@ Modern computer systems suffer from a huge speed gap between microprocessors and
         \includegraphics[width=\textwidth]{CacheLatency.png}
         \caption{Access Latency vs. Cache Size}
     \end{subfigure}
-    \caption{Showing how different cache traits are affected by cache size.}
+    \caption[Tradeoffs of Cache Size]{Showing how different cache traits are affected by cache size.}
     \label{fig:CacheSize}
 \end{figure}
 A different approach that has gained more popularity recently is to use compression to better utilize the existing cache space instead of increasing cache sizes. Cache compression allows caches to store more than their physical sizes, essentially acting like bigger size caches. However, they also impose more constraints on the compression and decompression design, requiring it to be very fast to not affect the cache performance. Previous proposals discussed and exploited data similarities and redundancies on different granularities. Some studies have found that applications can exhibit a lot of zero cache lines, some proposals were completely focused on zero compression\cite{zca} while others treated zero lines as a special case in their compression schemes\cite{fpc, hycomp, dedup}. Other proposals took advantage of the existence of data similarities of different granularities across caches. Such approaches used dictionaries for intra-line granularity\cite{cpack, dish} or used deduplications\cite{dedup} to take advantage of inter-line granularity similarities. Some studies opted to do data compression to decrease the data size on a line or smaller granularity rather than exploit existing cache wide data patterns\cite{bdi, sc2, hycomp}.\par

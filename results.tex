@@ -4,21 +4,21 @@
 \chapter{Results}
 \label{ch:Results}
 
-In this chapter we show results for the BDI, Dedup, and DedupBDI caches along with the roofline model we established for DedeupBDI. We show how those four cache designs affect compression, MPKI, and speedup.
+In this chapter we show results for the \hyperref[sec:BDI]{BDI}, \hyperref[sec:Dedup]{Dedup}, and \hyperref[sec:Final Implementation]{DedupBDI} caches along with the \hyperref[sec:Upper Bound]{roofline model} we established for DedepBDI. We show how those four cache designs affect compression, MPKI, and speedup.
 
 \section{Methodology}
 \label{sec:Methodology}
 \begin{table}[]
     \centering
     \begin{tabular}{ll}
-    Component & Configuration                                                                                                 \\ \hline
-    CPU       & x86\_64, 2.6GHz, 4-wide OoO, 80 entry ROB.                                                                    \\
-    L1I       & 32KB, 4 way, 3 cycle access lat, 64B lines, LRU.                                                              \\
-    L1D       & 32KB, 8 way, 4 cycle access lat, 64B lines, LRU.                                                              \\
-    L2        & Private, 256KB, 8 way, 11 cycle access lat, 64B lines, LRU.                                                   \\
-    L3        & Shared, 0.5MB-8MB (or similar tag array size if compressed), 16 way, 39 cycle access lat, 64B lines, 8 banks. \\
-    Mem       & DDR3-1066, 1GB.                                                                                              
-    \end{tabular}
+        Component & Configuration                                                                                                                                            \\ \hline
+        CPU       & x86\_64, 2.6GHz, 4-wide OoO, 80 entry ROB.                                                                                                               \\
+        L1I       & 32KB, 4 way, 3 cycle access lat, 64B lines, LRU.                                                                                                         \\
+        L1D       & 32KB, 8 way, 4 cycle access lat, 64B lines, LRU.                                                                                                         \\
+        L2        & Private, 256KB, 8 way, 11 cycle access lat, 64B lines, LRU.                                                                                              \\
+        L3        & \begin{tabular}[c]{@{}l@{}}Shared, 0.5MB-8MB (or similar tag array size if compressed),\\  16 way, 39 cycle access lat, 64B lines, 8 banks.\end{tabular} \\
+        Mem       & DDR3-1066, 1GB.                                                                                                                                         
+        \end{tabular}
     \caption{The simulated system}
     \label{tab:simsys}
 \end{table}
@@ -47,11 +47,11 @@ In this chapter we show results for the BDI, Dedup, and DedupBDI caches along wi
     \label{tab:simcache}
 \end{table}
 We used the zsim\cite{zsim} simulator to design and implement the four target caches: BDI, Dedup, DedupBDI, and Ideal DedupBDI along with a baseline conventional (uncompressed) cache. We used an out-of-order core timing model based on a medium-size x86 core, with detailed timing for all critical-path and off-critical-path events. We simulated a system with a 3 level cache hierarchy, with private L1 and L2 caches and a shared L3 cache. The simulated system is listed in Table \ref{tab:simsys}.\par 
-We simulated different conventional L3 cache sizes ranging from 0.5MB to 8MB. We also simulated the four compressed caches at the same tag array sizes, but with data arrays half and one quarter of the size. For example, a 4MB-2 BDI cache has the same number of tags as a conventional 4MB cache, but its tag to data ratio is 2 so its data array size is half of its conventional counterpart. The LLC cache configurations are shown in \ref{tab:simcache}. The workloads used are all the benchmarks from the AxBench\cite{axbench} benchmark suite, the Parsec\cite{parsec} benchmark suite with simmedium inputs, and the Spec\cite{spec} benchmark suite with train inputs (mid-size inputs). All the benchmarks were simulated until end or 3B instructions.
+We simulated different conventional L3 cache sizes ranging from 0.5MB to 8MB. We also simulated the four compressed caches at the same tag array sizes, but with data arrays half and one quarter of the size. For example, a 4MB-2 BDI cache has the same number of tags as a conventional 4MB cache, but its tag to data ratio is 2 so its data array size is half of its conventional counterpart. The LLC cache configurations are shown in \ref{tab:simcache}. The workloads used are all the benchmarks from the AxBench\cite{axbench} benchmark suite, the Parsec\cite{parsec} benchmark suite with simmedium inputs, and the Spec\cite{spec} benchmark suite with train inputs (mid-size inputs). All the benchmarks were simulated until end or 3 billion instructions.
 
 \section{Case Study}
 \label{sec:case_study}
-In this section we describe the four benchmarks we picked in \ref{sec:Motivation}. The benchmarks have different cache patterns and behaviors. During static analysis canneal was only compressible by BDI, dedup was compressible using deduplication, jmeint was uncompressed while libquantum was compressible by both. We analyze how these benchmarks behave when simulated in a real computing system with compressed caches.\par
+In this section we describe the four benchmarks we picked in \ref{sec:Motivation}. The benchmarks have different cache patterns and behaviors. During the static analysis done in \ref{sec:Motivation} canneal was only compressible by BDI, dedup was compressible using deduplication, jmeint was uncompressible while libquantum was compressible by both. We analyze how these benchmarks behave when simulated in a real computing system with compressed caches.\par
 \begin{figure}
     \begin{subfigure}{0.5\textwidth}
         \includegraphics[width=\textwidth]{canneal-compratio.png}
@@ -72,7 +72,7 @@ In this section we describe the four benchmarks we picked in \ref{sec:Motivation
     \caption[Case Study: Compression]{Showing four benchmarks and their compression ratio using different compressed caches.}
     \label{fig:case_compratio}
 \end{figure}
-Figure \ref{fig:case_compratio} shows the compression ratio of the four benchmarks. Compression ratio is calculated as the the ratio between valid tags and valid data entries. The blue columns are caches with tag entries double the data entries, while the orange ones have tags four times the data entries. As expected, canneal shows some compression with BDI but nothing with Dedup, lbm shows compression using Dedup but not using BDI, jmeint shows no compression using any of the caches, while libquantum shows compression using all of them. The DedupBDI cache combines the best of both worlds and either outperforms or at least does as good as BDI or Dedup.\par
+Figure \ref{fig:case_compratio} shows the compression ratio of the four benchmarks. Compression ratio is calculated as the ratio between valid tags and valid data entries. The blue columns are caches with tag entries double the data entries, while the orange ones have tags four times the data entries. As expected, canneal shows some compression with BDI but nothing with Dedup, lbm shows compression using Dedup but not using BDI, jmeint shows no compression using any of the caches, while libquantum shows compression using all of them. The DedupBDI cache combines the best of both worlds and either outperforms or at least does as good as BDI or Dedup.\par
 Figures \ref{fig:case_mpki} and \ref{fig:case_speedup} show the MPKI and Speedup for the four benchmarks under all cache configurations. Apart from the incompressible jmeint, all the benchmarks show huge speedups (up to 70\% in case of libquantum). DedupBDI is the best performing cache in canneal, lbm and libquantum. But it's slightly worse (0.01\% slowdown) than a conventional cache in jmeint.
 \begin{figure}
     \begin{subfigure}{0.5\textwidth}

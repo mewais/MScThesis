@@ -37,22 +37,22 @@
     \caption[Inter-line Patterns]{The figure shows the percentage of similar cache lines in a cache, those present an opportunity for deduplication. Recreated from \protect\cite{dedup}}
     \label{fig:DedupPotential}
 \end{figure}
-Caches have been observed to have a great degree of redundancy when used with real world applications, those patterns can be observed on different granularities. We consider the patterns found on a cache line granularity, and on granularities smaller than a cache line. Some of those patterns are shown in Figure~\ref{fig:Patterns} and are described as follows:
+Caches have been observed to have a great degree of redundancy when used with real world applications. Those patterns can be observed on different granularities;on a cache line granularity, and on granularities smaller than a cache line. Some of those patterns are shown in Figure~\ref{fig:Patterns} and are described as follows:
 \begin{enumerate}
-    \item \textbf{intra-line granularity:}
+    \item \textbf{Intra-line granularity:}
     \begin{enumerate}
         \item \textbf{Zeros:} A lot of cache data lines are fully zeros~\cite{balakrishnan2003exploiting, ekman2005robust, yang2000frequent}. This is a very common case because zeros are usually used to initialize data structures. They're also very common in applications that deal with sparse matrices. Shown in part A of the figure.
         \item \textbf{Repeated Values:} Where a full cache line can contain the same value~\cite{sazeides1997predictability, alameldeen2004adaptive}. This can be observed in applications that initialize large arrays to the same initial value, or in multimedia applications where adjacent pixels could hold the same colours. Shown in part B of the figure.
         \item \textbf{Narrow Values:} Programmers typically code for the worst case and thus have to pick larger data types while the majority of the values can fit in smaller narrower data types~\cite{alameldeen2004adaptive, islam2010characterization, wilson1999case}. An example is a cache line of 32 bit integers where all the integer values are less than 256. A similar case is shown in part C of the figure.
         \item \textbf{Near Values:} Lines that contain values that are somewhat similar but not exactly, those are values that have high entropy in their lower bits but have the same higher bits. An example would be a list of pointers that are in the same memory regions, or pixels of an image that have almost similar colours~\cite{wilson1999case, sun2008dhtc}. Part D and E of the figure show examples of this case.
     \end{enumerate}
-    \item \textbf{inter-line granularity:}
+    \item \textbf{Inter-line granularity:}
     \begin{enumerate}
         \item \textbf{Zero lines:} Similar to the first pattern in the previous point, this case is about data lines being fully zeros. The only difference here is that we consider different zero lines instead of one line being fully zeroed.
-        \item \textbf{Repeated lines:} Multiple cache lines can be exactly the same. This can happen in scientific benchmarks that have symmetry~\cite{dedup}. For example the benchmark bwaves~\cite{spec} simulates a spherical blast wave around an origin point, which involves perfect similarities.
+        \item \textbf{Repeated lines:} Multiple cache lines can be exactly the same. This can happen in scientific benchmarks that have symmetry~\cite{dedup}. For example the benchmark bwaves~\cite{spec} simulates a spherical blast wave around an origin point, which involves perfect symmetry.
     \end{enumerate}
 \end{enumerate}
-Figures~\ref{fig:BDIPotential} and~\ref{fig:DedupPotential} show the percentage of cache lines where those inter-line and intra-line patterns occur. A modified version of the zsim~\cite{zsim} simulator have been used to dump snapshots of the L3 cache every 100,000 L3 accesses, with a maximum of 10 dumps per benchmark. The figures were created by statically analyzing the dumps for patterns.
+Figures~\ref{fig:BDIPotential} and~\ref{fig:DedupPotential} show the percentage of cache lines where those inter-line and intra-line patterns occur. A modified version of the zsim~\cite{zsim} simulator was used to dump snapshots of the L3 cache every 100,000 L3 accesses, with a maximum of 10 dumps per benchmark. The figures were created by doing offline analysis on the dumps and searching line by line for all patterns.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%

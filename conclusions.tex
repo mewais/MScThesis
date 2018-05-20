@@ -2,7 +2,7 @@
 %%!TEX root = diss.tex
 
 \chapter{Conclusions}
-\label{Conclusions}
+\label{ch:Conclusions}
 
 Cache compression allows caches to perform as if they are of bigger size. It allows the cache to store more data rather than increase its physical size. There are multiple proposals for different cache compression techniques, but they all focus on just one granularity of compression, missing the opportunity of other compression granularities.\par
 In this work we proposed combining two different compression granularities, intra-line cache compression in the form of Base Delta Immediate (BDI) compression, and inter-line compression in the form of deduplication. The result was a compressed cache that is slightly bigger and slower than its conventional counterpart but also faster and allows for more performance. Our cache allows for up to 2.25X speedup over a conventional cache, more than a bigger conventional cache of twice the size could achieve, while maintaining the area overhead around 20\% and the power overhead 33\%.\par

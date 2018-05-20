@@ -196,7 +196,7 @@ Results generated from other cache sizes (ranging from 0.5MB to 8MB) are very si
         \includegraphics[width=\textwidth]{all4-mpki2.png}
     \end{subfigure}
     \caption[All benchmarks: 4MB MPKI]{Showing MPKI for all types of compressed 4MB caches with tags four times data against conventional same size caches and conventional cache with double the size.}
-    \label{fig:all_mpki2}
+    \label{fig:all_mpki}
 \end{figure}
 \begin{figure}
     \begin{subfigure}{\textwidth}
@@ -218,9 +218,9 @@ Results generated from other cache sizes (ranging from 0.5MB to 8MB) are very si
     \caption[All benchmarks: 0.5MB Speedup]{Showing Speedup for all types of compressed 4MB caches with tags four times data against conventional same size caches and conventional cache with double the size.}
     \label{fig:all_speedup2}
 \end{figure}
-Figures~\ref{fig:all_mpki1} and~\ref{fig:all_mpki2} show the MPKI for all the benchmarks when simulated with conventional and compressed 0.5MB and 4MB LLC caches with tags four times the data lines. Benchmarks are ordered similarly to~\ref{fig:fig:all_compratio}. The figure shows that compressed caches reduce MPKIs in LLC. DedupBDI is either the same as Dedup or BDI or is outperforming them. In general DedupBDI performs better than a conventional cache of twice the size.\par
+Figure~\ref{fig:all_mpki} shows the MPKI for all the benchmarks when simulated with conventional and compressed 4MB LLC caches with tags four times the data lines. Benchmarks are ordered similarly to~\ref{fig:all_compratio}. The figure shows that compressed caches reduce MPKIs in LLC. DedupBDI is either the same as Dedup or BDI or is outperforming them. In general DedupBDI performs better than a conventional cache of twice the size.\par
 However, the decrease of MPKI doesn't always necessitate speedup. The benchmark access patterns and cache sensitivity also play a role. Table~\ref{tab:cachesense} shows the behavior of all benchmarks over a range of cache sizes. Every benchmark is classified as cache sensitive, cache insensitive, or cache sensitive at a specific cache size range.
-Figure~\ref{fig:all_speedup} shows the speedup for all the benchmarks when simulated with a compressed 0.5MB and 4MB LLC caches with tags four times the data lines, respectively. We have chosen those two sizes because some benchmarks are only cache sensitive with lower cache sizes while others are only cache sensitive at higher cache sizes.\par
+Figures~\ref{fig:all_speedup1} and~\ref{fig:all_speedup2} show the speedup for all the benchmarks when simulated with a compressed 0.5MB and 4MB LLC caches with tags four times the data lines, respectively. We have chosen those two sizes because some benchmarks are only cache sensitive with lower cache sizes while others are only cache sensitive at higher cache sizes.\par
 For the cache insensitive benchmarks, the DedupBDI cache performs as fast as the conventional caches. It does not provide anymore speedup. But it allows the data to be compressed, providing area and power savings. For the cache sensitive benchmarks, DedupBDI outperforms the conventional, Dedup, and DedupBDI caches altogether.
 
 \section{Tag to Data Ratio}

@@ -22,7 +22,7 @@ In this section we propose an implementation of a cache that naively combines in
 \end{figure}
 Like Dedup, the cache consists of three arrays: a tag array, a data array, and a hash array. Unlike a normal cache and similar to a \hyperref[sec:Dedup]{Dedup} cache, the tag and data arrays are decoupled and do not have a one-to-one mapping. Instead, related tags and data entries have to be able to point to each other.\par
 On top of its normal operation, the tag array is also used to save compression and deduplication metadata. The hash array is needed to facilitate searching for similar data lines to enable deduplication.\par
-The general structure of the cache is shown in Figure~\ref{fig:DedupBDI}. Cache size including area overhead is shown in Chapter \ref{ch:Results}
+The general structure of the cache is shown in Figure~\ref{fig:DedupBDI}. Cache size including area overhead is shown in Chapter~\ref{ch:Results}
 \subsubsection{Tag Array}
 \label{sssec:DedupBDITag}
 \begin{figure}
@@ -135,7 +135,7 @@ With the use of perfect deduplication and data insertion, a hash array is no lon
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{An Optimized Implementation}
 \label{sec:Final Implementation}
-In order to improve on the naive implementation and towards the upper bound, we propose the following realistic improvements on the baseline implementation discussed in Section~\ref{sec:Straightforward Implementation.
+In order to improve on the naive implementation and towards the upper bound, we propose the following realistic improvements on the baseline implementation discussed in Section~\ref{sec:Straightforward Implementation}.
 \begin{figure}
     \includegraphics[width=\textwidth]{NumHashes.png}
     \caption[Missed Dedup Opportunity vs Hashes]{The figure shows the percentage of similar cache lines in a cache that could not be deduplicated, against the number of hash entries in the hash array}

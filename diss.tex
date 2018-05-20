@@ -144,10 +144,10 @@
 \usepackage{comment}
 
 %% The natbib package provides more sophisticated citing commands
-%% such as \citeauthor{} to provide the author names of a work,
-%% \citet{} to produce an author-and-reference citation,
-%% \citep{} to produce a parenthetical citation.
-%% We use \citeeg{} to provide examples
+%% such as~\citeauthor{} to provide the author names of a work,
+%%~\citet{} to produce an author-and-reference citation,
+%%~\citep{} to produce a parenthetical citation.
+%% We use~\citeeg{} to provide examples
 \usepackage[numbers,sort&compress]{natbib}
 \newcommand{\citeeg}[1]{\citep[e.g.,][]{#1}}
 
@@ -215,7 +215,7 @@
 %% and footnotes are hyperlinked.
 %%
 %% Hyperref provides a very handy command for doing cross-references:
-%% \autoref{}.  This is similar to \ref{} and \pageref{} except that
+%% \autoref{}.  This is similar to~\ref{} and \pageref{} except that
 %% it automagically puts in the *type* of reference.  For example,
 %% referencing a figure's label will put the text `Figure 3.4'.
 %% And the text will be hyperlinked to the appropriate place in the
@@ -419,11 +419,11 @@
 \bibliography{biblio}
 \end{singlespace}
 
-\appendix
-%    6. Appendices (including copies of all required UBC Research
-%       Ethics Board's Certificates of Approval)
-%\include{reb-coa}	% pdfpages is useful here
-\include{appendix}
+% \appendix
+% %    6. Appendices (including copies of all required UBC Research
+% %       Ethics Board's Certificates of Approval)
+% %\include{reb-coa}	% pdfpages is useful here
+% \include{appendix}
 
 \backmatter
 %    7. Index

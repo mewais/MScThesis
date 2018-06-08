@@ -232,7 +232,8 @@
 %%   rather than the entry text.
 \usepackage[bookmarks,bookmarksnumbered,%
     allbordercolors={0.8 0.8 0.8},%
-    pagebackref,linktocpage%
+    pagebackref,linktocpage,%
+    hidelinks
     ]{hyperref}
 %% The following change how the the back-references text is typeset in a
 %% bibliography when `backref' or `pagebackref' are used
@@ -304,7 +305,7 @@
 %% Document meta-data: be sure to also change the \hypersetup information
 %%
 
-\title{Combinig Inter and Intra-Line Cache Compression}
+\title{Combining Inter and Intra-Line Cache Compression}
 %\subtitle{If you want a subtitle}
 
 \author{Mohammad Ewais}
@@ -320,6 +321,11 @@
 \department{Electrical and Computer Engineering}
 \submissionmonth{April}
 \submissionyear{2018}
+
+% details of your examining committee
+\examiningcommittee{Mieszko Lis, Electrical and Computer Engineering}{Supervisor}
+\examiningcommittee{Tor Aamodt, Electrical and Computer Engineering}{Supervisory Committee Member}
+\examiningcommittee{Steven Wilton, Electrical and Computer Engineering}{Supervisory Committee Member}
 
 %% hyperref package provides support for embedding meta-data in .PDF
 %% files
@@ -353,6 +359,7 @@
 % Preliminary Pages (numbered in lower case Roman numerals)
 %    1. Title page (mandatory)
 \maketitle
+\makecommitteepage
 
 %    2. Abstract (mandatory - maximum 350 words)
 \include{abstract}

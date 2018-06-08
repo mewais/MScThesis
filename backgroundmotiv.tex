@@ -41,7 +41,7 @@ Caches have been observed to have a great degree of redundancy when used with re
 \begin{enumerate}
     \item \textbf{Intra-line granularity:}
     \begin{enumerate}
-        \item \textbf{Zeros:} A lot of cache data lines are fully zeros~\cite{balakrishnan2003exploiting, ekman2005robust, yang2000frequent}. This is a very common case because zeros are usually used to initialize data structures. They're also very common in applications that deal with sparse matrices. Shown in part A of the figure.
+        \item \textbf{Zeros:} A lot of cache data lines are fully zeros~\cite{balakrishnan2003exploiting, ekman2005robust, yang2000frequent}. This is a very common case because zeros are usually used to initialize data structures. They are also very common in applications that deal with sparse matrices. Shown in part A of the figure.
         \item \textbf{Repeated Values:} Where a full cache line can contain the same value~\cite{sazeides1997predictability, alameldeen2004adaptive}. This can be observed in applications that initialize large arrays to the same initial value, or in multimedia applications where adjacent pixels could hold the same colours. Shown in part B of the figure.
         \item \textbf{Narrow Values:} Programmers typically code for the worst case and thus have to pick larger data types while the majority of the values can fit in smaller narrower data types~\cite{alameldeen2004adaptive, islam2010characterization, wilson1999case}. An example is a cache line of 32 bit integers where all the integer values are less than 256. A similar case is shown in part C of the figure.
         \item \textbf{Near Values:} Lines that contain values that are somewhat similar but not exactly, those are values that have high entropy in their lower bits but have the same higher bits. An example would be a list of pointers that are in the same memory regions, or pixels of an image that have almost similar colours~\cite{wilson1999case, sun2008dhtc}. Part D and E of the figure show examples of this case.
@@ -79,7 +79,7 @@ The allowed compression schemes and compressed sizes are shown in Figure~\ref{fi
     \label{fig:BaseDeltaCompression}
 \end{figure}
 \subsubsection{Base Delta Immediate Compression}
-Although one can gain a lot of compression from the base delta compression scheme, some patterns cannot be represented just by one base value. An example would be applications that use structs comprising of different data types. Because of this, allowing the base delta compression to use more than one base might help compress such lines. Based on experiments in~\cite{bdi} it was clear that bases more than two do not provide much additional compression, so the authors selected two bases as their optimum number. To avoid the complexity of looking for a second base when compressing a data line, the authors opted to use the second base as an implicit zero. The intuition behind this is when structs are used in applications, they're likely to contain wide values with low dynamic range (e.g. Pointers) along with narrow values; the authors observe that using an implicit zero base captures most of the compression enabled by using an arbitrary second base.
+Although one can gain a lot of compression from the base delta compression scheme, some patterns cannot be represented just by one base value. An example would be applications that use structs comprising of different data types. Because of this, allowing the base delta compression to use more than one base might help compress such lines. Based on experiments in~\cite{bdi} it was clear that bases more than two do not provide much additional compression, so the authors selected two bases as their optimum number. To avoid the complexity of looking for a second base when compressing a data line, the authors opted to use the second base as an implicit zero. The intuition behind this is when structs are used in applications, they are likely to contain wide values with low dynamic range (e.g. Pointers) along with narrow values; the authors observe that using an implicit zero base captures most of the compression enabled by using an arbitrary second base.
 \begin{table}[]
 \centering
 \begin{tabular}{|c|c|c|c|c|}
@@ -112,7 +112,7 @@ A compression unit treats the line as elements of its corresponding base size. I
 \label{ssec:BDIStructure}
 \begin{figure}
     \includegraphics[width=\textwidth]{BDI.pdf}
-    \caption[BDI Cache]{Conventional (up) vs BDI (down), showing one set of each. Tags doubled, Data size same but divided to segments.}
+    \caption[BDI Cache]{Conventional (up) vs BDI (down), showing one set of each. Tags doubled, Data size same but divided to segments from S0 to S7.}
     \label{fig:BDI}
 \end{figure}
 The BDI cache builds upon the conventional cache design by adding some modifications to allow compression. Tag and data arrays are arranged in sets, and tag sets and data sets are coupled. The BDI cache structure is shown in Figure~\ref{fig:BDI}
@@ -143,7 +143,7 @@ To avoid segmentation, the authors assume compaction always happens in the data 
     \label{fig:BDI_Write}
 \end{figure}
 \subsubsection{Cache Write}
-A flowchart of write access to a BDI cache is shown in Figure~\ref{fig:BDI_Write}. Because we use inclusive caches, if a line is in a lower level cache it must also be in its parent. A cache miss on a write request thus can never happen and a tag array access on a write request will always yield a hit as shown in part~(a). In parallel to the tag access, the written data line can also be compressed. Once we know the size of the compressed line, we can check whether or not it fits in its old size. If it remains the same or requires a lower number of segments, as shown in part~(b), it can be written right away and the compression metadata in the tag array is also updated. If the new compressed size is bigger than the old size, insertion of the new written line will trigger size based evictions. The replacement policy will be consulted for tags and their segments to be evicted until enough space for the new data line is free; this is shown in part~(c). Once there are enough free segments, the line can finally be written and its tag's metadata can be updated accordingly, as shown in part~(d).\par
+A flowchart of write access to a BDI cache is shown in Figure~\ref{fig:BDI_Write}. Because we use inclusive write-back caches, if a line is in a lower level cache it must also be in its parent. A cache miss on a write request thus can never happen and a tag array access on a write request will always yield a hit as shown in part~(a). In parallel to the tag access, the written data line can also be compressed. Once we know the size of the compressed line, we can check whether or not it fits in its old size. If it remains the same or requires a lower number of segments, as shown in part~(b), it can be written right away and the compression metadata in the tag array is also updated. If the new compressed size is bigger than the old size, insertion of the new written line will trigger size based evictions. The replacement policy will be consulted for tags and their segments to be evicted until enough space for the new data line is free; this is shown in part~(c). Once there are enough free segments, the line can finally be written and its tag's metadata can be updated accordingly, as shown in part~(d).\par
 As mentioned previously, the authors assume compaction always happens in the data array before each insertion.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -164,7 +164,7 @@ The Dedup cache was introduced by Tian et al.~\cite{dedup}. The authors found th
 The Dedup cache introduces some major modifications on top of a conventional cache to support deduplication. The tag array is arranged as normal in sets and ways. The data array is no longer coupled with the tag array, instead it has to be explicitly accessed by pointers. So the data array has no constraints or requirements on its associativity, so it is simply left to be direct mapped. To take advantage of deduplications, the tag array must generally have more entries than the data array.\par
 To facilitate finding and locating duplicate lines, a new structure is added to the cache, called the hash array. The hash array is a storage that saves hashes of data lines. Searching and comparing in the hash array makes it faster and cheaper than searching for duplicate lines directly in the data cache.
 
-The Dedup cache structure is shown in Figure~\ref{fig:BDI}
+The Dedup cache structure is shown in Figure~\ref{fig:Dedup}
 
 \subsubsection{Tag Array}
 \label{sssec:DedupTag}
@@ -179,21 +179,26 @@ To facilitate the eviction of the tags associated with the data line in case it 
 The data line also includes an extra counter. This counter is used to track how many tags use this data line, which is useful to decide which data lines to evict.
 \subsubsection{Hash Array}
 \label{sssec:DedupHash}
-The hash array in a Dedup cache is used to store hashes of some of the data lines, providing a way to facilitate finding similar lines and deduplicating them. The hash array is a simple set associative structure.\par
+\begin{figure}
+    \includegraphics[width=\textwidth]{Dedup_Hash.pdf}
+    \caption[Dedup Hash Array]{A direct mapped Dedup hash array is shown. Hashes are treated like addresses in the tag array: the lower part is used for indexing while the higher part is saved as a tag.}
+    \label{fig:DedupHash}
+\end{figure}
+The hash array in a Dedup cache is used to store hashes of some of the data lines, providing a way to facilitate finding similar lines and deduplicating them. The hash array is a simple set associative structure. It is shown in Figure~\ref{fig:DedupHash}\par
 When a data line is hashed, its hash is split into two parts. One is used to index the hash array, while the other is saved in the hash array itself as a "tag". This process is similar to how memory addresses access the tag array, where part of the address is used to index the array while the other part is saved in the array itself.\par
-Along with each hash stored in the hash array, there is also a pointer to a data line that is associated with this hash, similar to the data pointers in tag arrays.\par
+Along with each hash stored in the hash array, there is also a pointer to a data line that is associated with this hash, similar to the data pointers in tag arrays. The structure of a Dedup hash array is shown in Figure~\ref{fig:DedupHash}.\par
 The hashes are computed through an XOR tree. Based on experiments done in~\cite{dedup}, the number of hash entries in the array can be kept small (64 entries). Tian et al. show that a small number of hash entries is enough to keep collisions less that 1\%.
 
 \subsection{Replacement Policies}
 \label{ssec:DedupRepl}
-While the tag array in a Dedup cache maintains its normal replacement policies, the data and hash array are treated differently because they're decoupled from the tag array.
+While the tag array in a Dedup cache maintains its normal replacement policies, the data and hash array are treated differently because they are decoupled from the tag array.
 \subsubsection{Data Array}
 \label{sssec:DedupDataRepl}
 The data array replacement policy can be split into two parts. The first part uses a list to keep track of all free lines in the data array. This list is always consulted first for a free line to insert into. If the free list is empty, indicating that there are no free lines in the data array, the second part of the replacement policy is then used.\par
 In this case, a random data line is selected. If that line is distinct (not deduplicated, has one tag), it is evicted and used for insertions; otherwise another random line is selected. This process is repeated up to four times, if after those four times no distinct line has been found, the line with the lowest deduplications is evicted and used for insertion.
 \subsubsection{Hash Array}
 \label{sssec:DedupHashRepl}
-The hash array is indexed by a part of the hash, the selection of a victim hash set is dependant on the hash that needs to be inserted. Once that set is selected, a hash entry is then selected based on the number of deduplication on the data line it point to, if this data line is not deduplicated then this hash can be used and overwritten, otherwise it is not touched. The rationale behind this is to keep hashes pointing to deduplciated lines from getting evicted and causing the cache to miss extra deduplication in favour of a newly incoming line that might not be useful for deduplication.\par
+The hash array is indexed by a part of the hash, the selection of a victim hash set is dependant on the hash that needs to be inserted. Once that set is selected, a hash entry is then selected based on the number of deduplication on the data line it point to, if this data line is not deduplicated then this hash can be used and overwritten, otherwise it is not touched. The rationale behind this is to keep hashes pointing to deduplicated lines from getting evicted and causing the cache to miss extra deduplication in favour of a newly incoming line that might not be useful for deduplication.\par
 
 \subsection{Operation}
 \label{ssec:DedupOperations}
@@ -219,13 +224,13 @@ If the hash access hits, then the incoming line must be compared to the line poi
     \label{fig:Dedup_Write}
 \end{figure}
 \subsubsection{Cache Write}
-A flowchart of write access to a Dedup cache is shown in Figure~\ref{fig:Dedup_Write}. Because we use inclusive caches, if a line is in a lower level cache it must also be in its parent. A cache miss on a write request thus can never happen and a tag array access on a write request will always yield a hit as shown in part~(a). In parallel to the tag access, the written data line can also be hashed.\par
+A flowchart of write access to a Dedup cache is shown in Figure~\ref{fig:Dedup_Write}. Because we use inclusive write-back caches, if a line is in a lower level cache it must also be in its parent. A cache miss on a write request thus can never happen and a tag array access on a write request will always yield a hit as shown in part~(a). In parallel to the tag access, the written data line can also be hashed.\par
 Once the tag access is finished, we can find out whether the line was distinct or not. If the line is distinct and had no other tags associated with it, then it can be written to right away as shown in part~(b). If the line is deduplicated, then a write to the line can change it and cause that tag to lose similarity. The insertion of the written data line then can be handled similarly to a miss. It has to access the hash array and look for similar lines, this has one of the four outcomes described above as shown in parts~(c) and (d).
 
 \section{Motivation}
 \label{sec:Motivation}
 Deduplication and base delta immediate compression work on two different granularities. One is inter-line and works on a cache line granularity while the other works intra-line with a granularity of two, four, or eight bytes. This means that they can both be combined to deduplicate similar lines and compress each of those lines at the same time.
-In this section, we look at four different benchmarks with different cache patterns and behaviors. One benchmark is very compressible by BDI, the second is compressible using deduplication, the third is incompressible, and the fourth is compressible by BDI and deduplication. We do offline analysis on cache dumps of these benchmarks to find how they respond to each type of compression and how a combination of both compression (Dedup+BDI) techniques can improve on them.\par
+In this section, we look at four different categories of benchmarks, each with different cache patterns and behaviors. The first category is very compressible by BDI, the second is compressible using deduplication, the third is incompressible, and the fourth is compressible by BDI and deduplication. We pick one benchmark of each category as a representative. Then we do offline analysis on cache dumps of these benchmarks to find how they respond to each type of compression and how a combination of both compression (Dedup+BDI) techniques can improve on them.\par
 The four benchmarks are:
 \begin{figure}
     \begin{subfigure}{0.5\textwidth}
@@ -267,7 +272,7 @@ The four benchmarks are:
     \label{fig:CompPossibility}
 \end{figure}
 Generalizing on what we found. We used the cache dumps from a modified zsim\cite{zsim} to analyze the data and show the percentage of cache lines that can be compressed by BDI, the percentage of cache lines that are similar and thus deduplicable, and the percentage of cache lines that can be compressed using both schemes at the same time.\par
-As Figure~\ref{fig:CompPossibility} shows, BDI and Deduplications are orthogonal to some degree. The existence of some cache lines that can be compressed by only one of both compression schemes means they can work separately without affecting each other. However, because there are lines that can be compressed by both schemes, BDI can lose some of its improvements because of deduplication. For example, if ten lines were similar and compressible by BDI, using BDI will compress each of them on its own, using deduplication will reduce all ten lines to only one line. Using both techniques means deduplication still compresses ten lines to one, but BDI now compresses only one line instead of 10. The improvements of BDI can thus be limited by deduplication.\par
+As Figure~\ref{fig:CompPossibility} shows, BDI and deduplications are orthogonal to some degree. The existence of some cache lines that can be compressed by only one of both compression schemes means they can work separately without affecting each other. However, because there are lines that can be compressed by both schemes, BDI can lose some of its improvements because of deduplication. For example, if ten lines were similar and compressible by BDI, using BDI will compress each of them on its own, using deduplication will reduce all ten lines to only one line. Using both techniques means deduplication still compresses ten lines to one, but BDI now compresses only one line instead of 10. The improvements of BDI can thus be limited by deduplication.\par
 \begin{figure}
     \begin{subfigure}[t]{\textwidth}
         \includegraphics[width=\textwidth]{CompSize1.png}
